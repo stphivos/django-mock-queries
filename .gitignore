@@ -1,0 +1,8 @@
+*.pyc
+dist/
+.idea/
+.cache
+.coverage
+.DS_Store
+MANIFEST
+patches.py
