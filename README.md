@@ -41,7 +41,7 @@ pip install django_mock_queries
 
 # TODO
 
-* Integrate with Travis CI
+* Integrate with Travis CI, Tox, Flake8
 * Include coverage and pypi version in README
 * Finish library tests
 * Add unit test examples for: CRUD, aggregate functions, Q objects
