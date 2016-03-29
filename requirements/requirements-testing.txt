@@ -1,5 +1,6 @@
 mock
 pytest
+pytest-flake8
 coverage
 tox
 virtualenv
