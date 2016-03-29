@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/stphivos/django-mock-queries.svg)](https://travis-ci.org/stphivos/django-mock-queries)
+[![codecov.io](https://codecov.io/github/stphivos/django-mock-queries/coverage.svg?branch=master)](https://codecov.io/github/stphivos/django-mock-queries?branch=master)
+
 # Django Mock Queries
 
 A django library for mocking queryset functions in memory for testing
