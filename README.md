@@ -33,10 +33,16 @@ class TestApi(TestCase):
         assert inactive_user not in results
 ```
 
-TODO: Add more advanced examples
-
 # Installation
 
 ```bash
 pip install django_mock_queries
 ```
+
+# TODO
+
+* Integrate with Travis CI
+* Include coverage and pypi version in README
+* Finish library tests
+* Add unit test examples for: CRUD, aggregate functions, Q objects
+* Implement decorators for unified model patching
