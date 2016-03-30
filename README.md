@@ -8,16 +8,29 @@ A django library for mocking queryset functions in memory for testing
 
 # Examples
 
-A method that queries active users:
 ```python
+from django_mock_queries.query import MockSet, MockModel
 
-def active_users(self):
-    return User.objects.filter(is_active=True).all()
+qs = MockSet(
+    MockModel(mock_name='john', email='john@gmail.com'),
+    MockModel(mock_name='jeff', email='jeff@hotmail.com'),
+    MockModel(mock_name='bill', email='bill@gmail.com'),
+)
+
+print [x for x in qs.all().filter(email__icontains='gmail.com').select_related('address')]
+# Outputs [john, bill]
 ```
 
-Can be unit tested by patching django's user model Manager or Queryset with a **MockSet**
 ```python
+"""
+A method that queries active users:
+"""
+def active_users(self):
+    return User.objects.filter(is_active=True).all()
 
+"""
+Can be unit tested by patching django's user model Manager or Queryset with a MockSet
+"""
 from django_mock_queries.query import MockSet, MockModel
 
 
