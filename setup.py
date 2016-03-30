@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name='django_mock_queries',
     packages=['django_mock_queries'],
-    version='0.0.7',
+    version='0.0.8',
     description='A django library for mocking queryset functions in memory for testing',
     author='Phivos Stylianides',
     author_email='stphivos@gmail.com',

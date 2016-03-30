@@ -15,8 +15,6 @@ matrix:
     - python: 3.5
       env:
       - TOX_ENV=py35
-  allow_failures:
-    - env: TOX_ENV=py35
 
 install:
   - travis_retry pip install "virtualenv<14.0.0" "tox>=1.9" "coverage<4"

@@ -1,5 +1,6 @@
+[![Latest Version](https://img.shields.io/pypi/v/django_mock_queries.svg)](https://pypi.python.org/pypi/django_mock_queries)
 [![Build Status](https://travis-ci.org/stphivos/django-mock-queries.svg)](https://travis-ci.org/stphivos/django-mock-queries)
-[![codecov.io](https://codecov.io/github/stphivos/django-mock-queries/coverage.svg?branch=master)](https://codecov.io/github/stphivos/django-mock-queries?branch=master)
+[![Code Coverage](https://codecov.io/github/stphivos/django-mock-queries/coverage.svg?branch=master)](https://codecov.io/github/stphivos/django-mock-queries?branch=master)
 
 # Django Mock Queries
 
