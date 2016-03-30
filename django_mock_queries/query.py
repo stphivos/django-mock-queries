@@ -1,9 +1,9 @@
 from mock import MagicMock, PropertyMock
 from operator import attrgetter
 
-from constants import *
-from exceptions import *
-from utils import matches, merge, intersect
+from .constants import *
+from .exceptions import *
+from .utils import matches, merge, intersect
 
 
 class MockBase(MagicMock):

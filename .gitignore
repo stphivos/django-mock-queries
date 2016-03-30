@@ -1,8 +1,10 @@
 *.pyc
 dist/
+.tox/
 .idea/
 .cache
 .coverage
 .DS_Store
+*migrations/
 MANIFEST
 patches.py
