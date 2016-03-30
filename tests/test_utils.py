@@ -64,8 +64,32 @@ class TestUtils(TestCase):
         result = utils.is_match(1, '1')
         assert result is False
 
+    def test_is_match_case_sensitive_equality_check(self):
+        result = utils.is_match('a', 'A', constants.COMPARISON_EXACT)
+        assert result is False
+
+        result = utils.is_match('a', 'a', constants.COMPARISON_EXACT)
+        assert result is True
+
     def test_is_match_case_insensitive_equality_check(self):
         result = utils.is_match('a', 'A', constants.COMPARISON_IEXACT)
+        assert result is True
+
+        result = utils.is_match('a', 'a', constants.COMPARISON_IEXACT)
+        assert result is True
+
+    def test_is_match_case_sensitive_contains_check(self):
+        result = utils.is_match('abc', 'A', constants.COMPARISON_CONTAINS)
+        assert result is False
+
+        result = utils.is_match('abc', 'a', constants.COMPARISON_CONTAINS)
+        assert result is True
+
+    def test_is_match_case_insensitive_contains_check(self):
+        result = utils.is_match('abc', 'A', constants.COMPARISON_ICONTAINS)
+        assert result is True
+
+        result = utils.is_match('abc', 'a', constants.COMPARISON_ICONTAINS)
         assert result is True
 
     def test_is_match_greater_than_value_check(self):

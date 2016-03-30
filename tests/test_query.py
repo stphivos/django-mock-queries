@@ -1,7 +1,6 @@
-from mock import MagicMock
 from unittest import TestCase
 
-from django_mock_queries.query import MockSet
+from django_mock_queries.query import MockSet, MockModel
 
 
 class TestQuery(TestCase):
@@ -18,19 +17,20 @@ class TestQuery(TestCase):
         assert list(self.mock_set) == items
 
     def test_query_removes_items_from_set(self):
-        item_1 = MagicMock(foo=1)
-        item_2 = MagicMock(foo=2)
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
 
         self.mock_set.add(item_1, item_2)
         self.mock_set.remove(foo=1)
+        items = list(self.mock_set)
 
-        assert item_1 not in list(self.mock_set)
-        assert item_2 in list(self.mock_set)
+        assert item_1 not in items
+        assert item_2 in items
 
     def test_query_filters_items_by_attributes(self):
-        item_1 = MagicMock(foo=1, bar='a')
-        item_2 = MagicMock(foo=1, bar='b')
-        item_3 = MagicMock(foo=2, bar='b')
+        item_1 = MockModel(foo=1, bar='a')
+        item_2 = MockModel(foo=1, bar='b')
+        item_3 = MockModel(foo=2, bar='b')
 
         self.mock_set.add(item_1, item_2, item_3)
         results = list(self.mock_set.filter(foo=1, bar='b'))
@@ -55,9 +55,9 @@ class TestQuery(TestCase):
         assert self.mock_set[1] == items[1]
 
     def test_query_latest_returns_the_last_element_from_ordered_set(self):
-        item_1 = MagicMock(foo=1)
-        item_2 = MagicMock(foo=2)
-        item_3 = MagicMock(foo=3)
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+        item_3 = MockModel(foo=3)
 
         self.mock_set.add(item_3, item_1, item_2)
         latest = self.mock_set.latest('foo')
@@ -65,9 +65,9 @@ class TestQuery(TestCase):
         assert latest == item_3
 
     def test_query_earliest_returns_the_first_element_from_ordered_set(self):
-        item_1 = MagicMock(foo=1)
-        item_2 = MagicMock(foo=2)
-        item_3 = MagicMock(foo=3)
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+        item_3 = MockModel(foo=3)
 
         self.mock_set.add(item_3, item_1, item_2)
         latest = self.mock_set.earliest('foo')
@@ -77,3 +77,13 @@ class TestQuery(TestCase):
     def test_query_implements_iterator_on_items(self):
         items = [1, 2, 3]
         assert [x for x in MockSet(*items)] == items
+
+    def test_query_return_self_methods_accept_any_parameters_and_return_instance(self):
+        qs = MockSet(MockModel(foo=1), MockModel(foo=2))
+        assert qs == qs.all()
+        assert qs == qs.only('f1')
+        assert qs == qs.defer('f2', 'f3')
+        assert qs == qs.using('default')
+        assert qs == qs.select_related('t1', 't2')
+        assert qs == qs.prefetch_related('t3', 't4')
+        assert qs == qs.select_for_update()

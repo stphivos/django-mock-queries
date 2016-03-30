@@ -7,9 +7,12 @@ from .utils import matches, merge, intersect
 
 
 class MockBase(MagicMock):
+    def return_self(self, *args, **kwargs):
+        return self
+
     def __init__(self, *args, **kwargs):
         for x in kwargs.pop('return_self_methods', []):
-            kwargs.update({x: lambda: self})
+            kwargs.update({x: self.return_self})
 
         super(MockBase, self).__init__(*args, **kwargs)
 
@@ -162,7 +165,7 @@ def MockModel(cls=None, mock_name=None, **attrs):
     mock_model = MagicMock(**mock_attrs)
 
     if mock_name:
-        mock_model.name = mock_name
+        setattr(type(mock_model), '__repr__', MagicMock(return_value=mock_name))
 
     for key, value in attrs.items():
         setattr(type(mock_model), key, PropertyMock(return_value=value))

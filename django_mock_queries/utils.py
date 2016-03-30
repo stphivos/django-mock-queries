@@ -30,7 +30,10 @@ def is_match(first, second, comparison=None):
     if not comparison:
         return first == second
     return {
+        COMPARISON_EXACT: lambda: first == second,
         COMPARISON_IEXACT: lambda: first.lower() == second.lower(),
+        COMPARISON_CONTAINS: lambda: second in first,
+        COMPARISON_ICONTAINS: lambda: second.lower() in first.lower(),
         COMPARISON_GT: lambda: first > second,
         COMPARISON_GTE: lambda: first >= second,
         COMPARISON_LT: lambda: first < second,
