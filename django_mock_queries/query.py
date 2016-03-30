@@ -77,8 +77,8 @@ def MockSet(*initial_items, **kwargs):
 
     mock_set.exists = MagicMock(side_effect=exists)
 
-    def get_item(index):
-        return items[index]
+    def get_item(x):
+        return items.__getitem__(x)
 
     mock_set.__getitem__ = MagicMock(side_effect=get_item)
 
