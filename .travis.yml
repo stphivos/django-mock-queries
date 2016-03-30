@@ -14,7 +14,7 @@ matrix:
   include:
     - python: 3.5
       env:
-      - TOXENV=py35
+      - TOX_ENV=py35
   allow_failures:
     - env: TOX_ENV=py35
 
