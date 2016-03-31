@@ -9,6 +9,8 @@ A django library for mocking queryset functions in memory for testing
 
 # Examples
 
+QuerySet style support for method chaining:
+
 ```python
 from django_mock_queries.query import MockSet, MockModel
 
@@ -22,9 +24,11 @@ print [x for x in qs.all().filter(email__icontains='gmail.com').select_related('
 # Outputs [john, bill]
 ```
 
+Testing a method that uses QuerySet filter:
+
 ```python
 """
-A method that queries active users:
+A method that queries active users
 """
 def active_users(self):
     return User.objects.filter(is_active=True).all()
@@ -36,7 +40,7 @@ from django_mock_queries.query import MockSet, MockModel
 
 
 class TestApi(TestCase):
-    users = MockSet(cls=User)
+    users = MockSet()
     user_objects = patch('django.contrib.auth.models.User.objects', users)
 
     @user_objects
