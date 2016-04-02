@@ -62,7 +62,6 @@ pip install django_mock_queries
 
 # TODO
 
-* Finish library tests
 * Add unit test examples for: CRUD, aggregate functions, Q objects
 * Implement decorators for unified model patching
 * Add support for missing queryset functions and field lookups
