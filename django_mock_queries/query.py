@@ -44,20 +44,23 @@ def MockSet(*initial_items, **kwargs):
     mock_set.remove = MagicMock(side_effect=remove)
 
     def filter_q(source, query):
-        results = list(source)
+        results = []
 
-        filtered = []
         for exp in query.children:
-            filtered.append(MockSet(*matches(*items, **{exp[0]: exp[1]}), cls=cls))
+            filtered = list(matches(*source, **{exp[0]: exp[1]}))
 
-        if query.connector == CONNECTORS_OR:
-            for filter_results in filtered:
-                results = merge(results, list(filter_results))
-        elif query.connector == CONNECTORS_AND:
-            for filter_results in filtered:
-                results = intersect(results, list(filter_results))
+            if not results:
+                results = filtered
+                continue
+
+            if query.connector == CONNECTORS_OR:
+                results = merge(results, filtered)
+            elif query.connector == CONNECTORS_AND:
+                results = intersect(results, filtered)
 
         return results
+
+    mock_set.filter_q = MagicMock(side_effect=filter_q)
 
     def filter(*args, **attrs):
         results = list(items)
