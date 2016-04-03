@@ -1,7 +1,7 @@
-from mock import MagicMock
+from mock import MagicMock, ANY
 from unittest import TestCase
 
-from django_mock_queries.constants import CONNECTORS_OR, CONNECTORS_AND
+from django_mock_queries.constants import *
 from django_mock_queries.query import MockSet, MockModel
 
 
@@ -82,6 +82,71 @@ class TestQuery(TestCase):
         self.mock_set.add(*items)
         assert self.mock_set[1] == items[1]
 
+    def test_query_aggregate_performs_sum_on_queryset_field(self):
+        items = [
+            MockModel(foo=5),
+            MockModel(foo=10),
+            MockModel(foo=15)
+        ]
+        self.mock_set.add(*items)
+
+        expr = MagicMock(function=AGGREGATES_SUM, source_expressions=[MockModel(name='foo')])
+        result = self.mock_set.aggregate(expr)
+
+        assert result['foo__sum'] == sum([x.foo for x in items])
+
+    def test_query_aggregate_performs_count_on_queryset_field(self):
+        items = [
+            MockModel(foo=5),
+            MockModel(foo=10),
+            MockModel(foo=15)
+        ]
+        self.mock_set.add(*items)
+
+        expr = MagicMock(function=AGGREGATES_COUNT, source_expressions=[MockModel(name='foo')])
+        result = self.mock_set.aggregate(expr)
+
+        assert result['foo__count'] == len(items)
+
+    def test_query_aggregate_performs_max_on_queryset_field(self):
+        items = [
+            MockModel(foo=5),
+            MockModel(foo=10),
+            MockModel(foo=15)
+        ]
+        self.mock_set.add(*items)
+
+        expr = MagicMock(function=AGGREGATES_MAX, source_expressions=[MockModel(name='foo')])
+        result = self.mock_set.aggregate(expr)
+
+        assert result['foo__max'] == max([x.foo for x in items])
+
+    def test_query_aggregate_performs_min_on_queryset_field(self):
+        items = [
+            MockModel(foo=5),
+            MockModel(foo=10),
+            MockModel(foo=15)
+        ]
+        self.mock_set.add(*items)
+
+        expr = MagicMock(function=AGGREGATES_MIN, source_expressions=[MockModel(name='foo')])
+        result = self.mock_set.aggregate(expr)
+
+        assert result['foo__min'] == min([x.foo for x in items])
+
+    def test_query_aggregate_performs_avg_on_queryset_field(self):
+        items = [
+            MockModel(foo=5),
+            MockModel(foo=10),
+            MockModel(foo=15)
+        ]
+        self.mock_set.add(*items)
+
+        expr = MagicMock(function=AGGREGATES_AVG, source_expressions=[MockModel(name='foo')])
+        result = self.mock_set.aggregate(expr)
+
+        assert result['foo__avg'] == sum([x.foo for x in items]) / len(items)
+
     def test_query_latest_returns_the_last_element_from_ordered_set(self):
         item_1 = MockModel(foo=1)
         item_2 = MockModel(foo=2)
@@ -105,6 +170,44 @@ class TestQuery(TestCase):
     def test_query_implements_iterator_on_items(self):
         items = [1, 2, 3]
         assert [x for x in MockSet(*items)] == items
+
+    def test_query_creates_new_model_and_adds_to_set(self):
+        qs = MockSet(cls=MockModel)
+
+        attrs = dict(foo=1, bar='a')
+        obj = qs.create(**attrs)
+
+        obj.save.assert_called_once_with(force_insert=True, using=ANY)
+        assert obj in [x for x in qs]
+
+        for k, v in attrs.items():
+            assert getattr(obj, k, None) == v
+
+    def test_query_gets_unique_match_by_attrs_from_set(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+        item_3 = MockModel(foo=3)
+
+        self.mock_set.add(item_1, item_2, item_3)
+        result = self.mock_set.get(foo=2)
+
+        assert item_2 == result
+
+    def test_query_get_raises_does_not_exist_when_no_match(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+        item_3 = MockModel(foo=3)
+
+        self.mock_set.add(item_1, item_2, item_3)
+        self.assertRaises(Exception, self.mock_set.get, foo=4)
+
+    def test_query_get_raises_does_multiple_objects_returned_when_more_than_one_match(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=1)
+        item_3 = MockModel(foo=2)
+
+        self.mock_set.add(item_1, item_2, item_3)
+        self.assertRaises(Exception, self.mock_set.get, foo=1)
 
     def test_query_return_self_methods_accept_any_parameters_and_return_instance(self):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
