@@ -1,5 +1,7 @@
+from mock import MagicMock
 from unittest import TestCase
 
+from django_mock_queries.constants import CONNECTORS_OR, CONNECTORS_AND
 from django_mock_queries.query import MockSet, MockModel
 
 
@@ -34,6 +36,32 @@ class TestQuery(TestCase):
 
         self.mock_set.add(item_1, item_2, item_3)
         results = list(self.mock_set.filter(foo=1, bar='b'))
+
+        assert item_1 not in results
+        assert item_2 in results
+        assert item_3 not in results
+
+    def test_query_filters_items_by_q_object_or(self):
+        item_1 = MockModel(mock_name='#1', foo=1)
+        item_2 = MockModel(mock_name='#2', foo=2)
+        item_3 = MockModel(mock_name='#3', foo=3)
+
+        source = [item_1, item_2, item_3]
+        query = MagicMock(connector=CONNECTORS_OR, children=[('foo', 1), ('foo', 2)])
+        results = self.mock_set.filter_q(source, query)
+
+        assert item_1 in results
+        assert item_2 in results
+        assert item_3 not in results
+
+    def test_query_filters_items_by_q_object_and(self):
+        item_1 = MockModel(mock_name='#1', foo=1, bar='a')
+        item_2 = MockModel(mock_name='#2', foo=1, bar='b')
+        item_3 = MockModel(mock_name='#3', foo=3, bar='b')
+
+        source = [item_1, item_2, item_3]
+        query = MagicMock(connector=CONNECTORS_AND, children=[('foo', 1), ('bar', 'b')])
+        results = self.mock_set.filter_q(source, query)
 
         assert item_1 not in results
         assert item_2 in results
