@@ -12,6 +12,7 @@ A django library for mocking queryset functions in memory for testing
 QuerySet style support for method chaining:
 
 ```python
+from django.db.models import Avg, Q
 from django_mock_queries.query import MockSet, MockModel
 
 qs = MockSet(
@@ -21,7 +22,32 @@ qs = MockSet(
 )
 
 print [x for x in qs.all().filter(email__icontains='gmail.com').select_related('address')]
-# Outputs [john, bill]
+# Outputs: [john, bill]
+
+qs = MockSet(
+    MockModel(mock_name='model s', msrp=70000),
+    MockModel(mock_name='model x', msrp=80000),
+    MockModel(mock_name='model 3', msrp=35000),
+)
+
+print qs.all().aggregate(Avg('msrp'))
+# Outputs: {'msrp__avg': 61666}
+
+qs = MockSet(
+    MockModel(mock_name='model x', make='tesla', country='usa'),
+    MockModel(mock_name='s-class', make='mercedes', country='germany'),
+    MockModel(mock_name='s90', make='volvo', country='sweden'),
+)
+
+print [x for x in qs.all().filter(Q(make__iexact='tesla') | Q(country__iexact='germany'))]
+# Outputs: [model x, s-class]
+
+qs = MockSet(cls=MockModel)
+print qs.create(mock_name='my_object', foo='1', bar='a')
+# Outputs: my_object
+
+print [x for x in qs]
+# Outputs: [my_object]
 ```
 
 Testing a method that uses QuerySet filter:
@@ -62,6 +88,5 @@ pip install django_mock_queries
 
 # TODO
 
-* Add unit test examples for: CRUD, aggregate functions, Q objects
 * Implement decorators for unified model patching
 * Add support for missing queryset functions and field lookups
