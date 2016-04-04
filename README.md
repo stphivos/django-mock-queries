@@ -5,7 +5,7 @@
 
 # Django Mock Queries
 
-A django library for mocking queryset functions in memory for testing
+A library for mocking django queryset functions in memory for testing
 
 ## Features
 
