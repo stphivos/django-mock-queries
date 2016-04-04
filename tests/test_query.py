@@ -2,6 +2,7 @@ from mock import MagicMock, ANY
 from unittest import TestCase
 
 from django_mock_queries.constants import *
+from django_mock_queries.exceptions import ModelNotSpecified
 from django_mock_queries.query import MockSet, MockModel
 
 
@@ -157,6 +158,10 @@ class TestQuery(TestCase):
 
         assert latest == item_3
 
+    def test_query_latest_raises_error_exist_when_empty_set(self):
+        self.mock_set.clear()
+        self.assertRaises(Exception, self.mock_set.latest, 'foo')
+
     def test_query_earliest_returns_the_first_element_from_ordered_set(self):
         item_1 = MockModel(foo=1)
         item_2 = MockModel(foo=2)
@@ -166,6 +171,10 @@ class TestQuery(TestCase):
         latest = self.mock_set.earliest('foo')
 
         assert latest == item_1
+
+    def test_query_earliest_raises_error_exist_when_empty_set(self):
+        self.mock_set.clear()
+        self.assertRaises(Exception, self.mock_set.earliest, 'foo')
 
     def test_query_implements_iterator_on_items(self):
         items = [1, 2, 3]
@@ -182,6 +191,11 @@ class TestQuery(TestCase):
 
         for k, v in attrs.items():
             assert getattr(obj, k, None) == v
+
+    def test_query_create_raises_model_not_specified_when_mock_set_called_without_cls(self):
+        qs = MockSet()
+        attrs = dict(foo=1, bar='a')
+        self.assertRaises(ModelNotSpecified, qs.create, **attrs)
 
     def test_query_gets_unique_match_by_attrs_from_set(self):
         item_1 = MockModel(foo=1)
@@ -208,6 +222,37 @@ class TestQuery(TestCase):
 
         self.mock_set.add(item_1, item_2, item_3)
         self.assertRaises(Exception, self.mock_set.get, foo=1)
+
+    def test_query_get_or_create_gets_existing_unique_match(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+        item_3 = MockModel(foo=3)
+
+        self.mock_set.add(item_1, item_2, item_3)
+        obj, created = self.mock_set.get_or_create(foo=2)
+
+        assert obj == item_2
+        assert created is False
+
+    def test_query_get_or_create_raises_does_multiple_objects_returned_when_more_than_one_match(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=1)
+        item_3 = MockModel(foo=2)
+
+        self.mock_set.add(item_1, item_2, item_3)
+        self.assertRaises(Exception, self.mock_set.get_or_create, foo=1)
+
+    def test_query_get_or_create_creates_new_model_when_no_match(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+        item_3 = MockModel(foo=3)
+
+        qs = MockSet(cls=MockModel)
+        qs.add(item_1, item_2, item_3)
+        obj, created = qs.get_or_create(foo=4)
+
+        assert hasattr(obj, 'foo') and obj.foo == 4
+        assert created is True
 
     def test_query_return_self_methods_accept_any_parameters_and_return_instance(self):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
