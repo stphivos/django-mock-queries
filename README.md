@@ -7,9 +7,15 @@
 
 A django library for mocking queryset functions in memory for testing
 
-# Examples
+## Features
 
-QuerySet style support for method chaining:
+* QuerySet style support for method chaining
+* Filtering with Q objects
+* Aggregates generation
+* CRUD functions
+* Field lookups
+
+## Examples
 
 ```python
 from django.db.models import Avg, Q
@@ -80,13 +86,13 @@ class TestApi(TestCase):
         	assert x.is_active
 ```
 
-# Installation
+## Installation
 
 ```bash
 pip install django_mock_queries
 ```
 
-# TODO
+## TODO
 
 * Implement decorators for unified model patching
 * Add support for missing queryset functions and field lookups
