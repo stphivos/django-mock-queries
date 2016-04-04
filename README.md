@@ -50,11 +50,11 @@ print [x for x in qs]
 # Outputs: [my_object]
 ```
 
-Testing a method that uses QuerySet filter:
+Writing a test for a function that uses QuerySet method filter:
 
 ```python
 """
-A method that queries active users
+A function that queries active users
 """
 def active_users(self):
     return User.objects.filter(is_active=True).all()
