@@ -120,5 +120,6 @@ $ git push -u origin HEAD
 
 ## TODO
 
+* Add custom asserts for django-rest-framework serializers/views
 * Add support for missing queryset functions and field lookups
 * Implement decorators for unified model patching
