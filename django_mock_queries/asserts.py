@@ -6,6 +6,7 @@ from .constants import *
 
 class SerializerAssert:
     _obj = None
+    _serializer = None
     _return_fields = []
     _mock_fields = []
     _expected_values = {}
@@ -52,16 +53,23 @@ class SerializerAssert:
                 continue
 
             assert field in data, \
-                'Field {0} missing from serializer {1}.'.format(field, self._cls.__name__)
+                'Field {0} missing from serializer {1}.'.format(field, self._cls)
 
             assert data[field] == values[field], \
                 'Field {0} equals {1}, expected {2}.'.format(field, data[field], values[field])
 
-    def _validate_args(self, obj):
+    def _validate_args(self):
         for field in self._mock_fields:
             if field in self._expected_values:
-                raise AttributeError(
-                    'Cannot specify expected value for a mocked field ({0}.{1}).'.format(type(obj).__name__, field))
+                raise AttributeError('Cannot specify expected value for a mocked field ({0}.{1}).'
+                                     .format(self._cls.Meta.model, field))
+
+    @property
+    def serializer(self):
+        if not self._serializer:
+            obj = self._get_obj()
+            self._serializer = self._cls(obj)
+        return self._serializer
 
     def instance(self, obj):
         self._obj = obj
@@ -80,17 +88,15 @@ class SerializerAssert:
         return self
 
     def run(self):
-        obj = self._get_obj()
-        self._validate_args(obj)
+        self._validate_args()
 
-        serializer = self._cls(obj)
-        values, patchers = self._get_values_patchers(serializer)
+        values, patchers = self._get_values_patchers(self.serializer)
 
         try:
             for patcher in patchers:
                 patcher.start()
 
-            self._test_expected_fields(serializer.data, values)
+            self._test_expected_fields(self.serializer.data, values)
         finally:
             for patcher in patchers:
                 patcher.stop()

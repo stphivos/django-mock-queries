@@ -6,3 +6,5 @@ pytest-flake8==0.2
 coverage==3.7.1
 tox==2.1.1
 virtualenv==13.1.2
+Django==1.9.2
+djangorestframework==3.3.2
