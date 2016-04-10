@@ -105,7 +105,7 @@ class CarSerializer(serializers.ModelSerializer):
         fields = ('id', 'make', 'model', 'speed',)
 
 """
-Test serializer returns expected fields with specified values and mock the result of nested serializer for field make
+Test serializer returns fields with expected values and mock the result of nested serializer for field make
 """
 def test_car_serializer_fields(self):
     car = Car(id=1, make=Manufacturer(id=1, name='vw'), model='golf', speed=300)
