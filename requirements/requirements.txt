@@ -1,1 +1,2 @@
 mock==1.3.0
+model_mommy==1.2.6
