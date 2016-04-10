@@ -57,7 +57,7 @@ print [x for x in qs]
 # Outputs: [my_object]
 ```
 
-Writing a test for a function that uses QuerySet method filter:
+### Test function that uses Django QuerySet:
 
 ```python
 """
@@ -87,7 +87,7 @@ class TestApi(TestCase):
         	assert x.is_active
 ```
 
-Writing a test for a django-rest-framework serializer:
+### Test django-rest-framework model serializer:
 
 ```python
 """
