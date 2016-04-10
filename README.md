@@ -14,6 +14,7 @@ A library for mocking django queryset functions in memory for testing
 * Aggregates generation
 * CRUD functions
 * Field lookups
+* django-rest-framework serializer asserts
 
 ## Examples
 
@@ -60,13 +61,13 @@ Writing a test for a function that uses QuerySet method filter:
 
 ```python
 """
-A function that queries active users
+Function that queries active users
 """
 def active_users(self):
     return User.objects.filter(is_active=True).all()
 
 """
-Can be unit tested by patching django's user model Manager or Queryset with a MockSet
+Test function applies expected filters by patching django's user model Manager or Queryset with a MockSet
 """
 from django_mock_queries.query import MockSet, MockModel
 
@@ -84,6 +85,43 @@ class TestApi(TestCase):
 
         for x in self.api.active_users():
         	assert x.is_active
+```
+
+Writing a test for a django-rest-framework serializer:
+
+```python
+"""
+Car model serializer that includes a nested serializer and a method field
+"""
+class CarSerializer(serializers.ModelSerializer):
+    make = ManufacturerSerializer()
+    speed = serializers.SerializerMethodField()
+
+    def get_speed(self, obj):
+        return obj.format_speed()
+
+    class Meta:
+        model = Car
+        fields = ('id', 'make', 'model', 'speed',)
+
+"""
+Test serializer returns expected fields with specified values and mock the result of nested serializer for field make
+"""
+def test_car_serializer_fields(self):
+    car = Car(id=1, make=Manufacturer(id=1, name='vw'), model='golf', speed=300)
+
+    values = {
+        'id': car.id,
+        'model': car.model,
+        'speed': car.formatted_speed(),
+    }
+
+    assert_serializer(CarSerializer) \
+        .instance(car) \
+        .returns('id', 'make', 'model', 'speed') \
+        .values(**values) \
+        .mocks('make') \
+        .run()
 ```
 
 ## Installation
