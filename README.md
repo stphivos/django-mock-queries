@@ -78,10 +78,10 @@ class TestApi(TestCase):
 
     @user_objects
     def test_api_active_users_filters_by_is_active_true(self):
-        self.users.add(*[
+        self.users.add(
         	MockModel(mock_name='active user', is_active=True),
         	MockModel(mock_name='inactive user', is_active=False)
-        ])
+        )
 
         for x in self.api.active_users():
         	assert x.is_active
