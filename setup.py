@@ -8,6 +8,6 @@ setup(
     author='Phivos Stylianides',
     author_email='stphivos@gmail.com',
     url='https://github.com/stphivos/django-mock-queries',
-    keywords=['django', 'mocking', 'tdd'],
+    keywords=['django', 'mocking', 'unit-testing', 'tdd'],
     classifiers=[],
 )
