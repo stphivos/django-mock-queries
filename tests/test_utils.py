@@ -41,6 +41,12 @@ class TestUtils(TestCase):
         assert value == 'test'
         assert comparison == constants.COMPARISON_IEXACT
 
+    def test_get_attribute_returns_none_with_isnull_comparison(self):
+        obj = MagicMock(foo=None)
+        value, comparison = utils.get_attribute(obj, 'foo__' + constants.COMPARISON_ISNULL)
+        assert value is None
+        assert comparison == constants.COMPARISON_ISNULL, comparison
+
     def test_get_attribute_returns_nested_object_value(self):
         obj = MagicMock(child=MagicMock(foo='test'))
         value, comparison = utils.get_attribute(obj, 'child__foo__' + constants.COMPARISON_IEXACT)
@@ -125,6 +131,22 @@ class TestUtils(TestCase):
 
         result = utils.is_match(2, 1, constants.COMPARISON_LTE)
         assert result is False
+
+    def test_is_match_isnull_check(self):
+        result = utils.is_match(1, True, constants.COMPARISON_ISNULL)
+        assert result is False
+
+        result = utils.is_match(1, False, constants.COMPARISON_ISNULL)
+        assert result is True
+
+        result = utils.is_match(None, True, constants.COMPARISON_ISNULL)
+        assert result is True
+
+        result = utils.is_match(None, False, constants.COMPARISON_ISNULL)
+        assert result is False
+
+        result = utils.is_match(None, 1, constants.COMPARISON_ISNULL)
+        assert result is True
 
     @patch('django_mock_queries.utils.get_attribute')
     @patch('django_mock_queries.utils.is_match', MagicMock(return_value=True))
