@@ -73,6 +73,13 @@ def MockSet(*initial_items, **kwargs):
 
     mock_set.filter = MagicMock(side_effect=filter)
 
+    def exclude(*args, **attrs):
+        excluded = filter(*args, **attrs)
+        results = [item for item in items if item not in excluded]
+        return MockSet(*results, cls=cls)
+
+    mock_set.exclude = MagicMock(side_effect=exclude)
+
     def clear():
         del items[:]
 
