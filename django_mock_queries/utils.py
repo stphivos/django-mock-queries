@@ -15,10 +15,10 @@ def get_attribute(obj, attr, default=None):
     parts = attr.split('__')
 
     for p in parts:
-        if result is None:
-            break
-        elif p in COMPARISONS:
+        if p in COMPARISONS:
             comparison = p
+        elif result is None:
+            break
         else:
             result = getattr(result, p, None)
 
@@ -38,6 +38,8 @@ def is_match(first, second, comparison=None):
         COMPARISON_GTE: lambda: first >= second,
         COMPARISON_LT: lambda: first < second,
         COMPARISON_LTE: lambda: first <= second,
+        COMPARISON_IN: lambda: first in second,
+        COMPARISON_ISNULL: lambda: (first is None) == bool(second),
     }[comparison]()
 
 
