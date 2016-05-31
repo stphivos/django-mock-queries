@@ -148,6 +148,13 @@ class TestUtils(TestCase):
         result = utils.is_match(None, 1, constants.COMPARISON_ISNULL)
         assert result is True
 
+    def test_is_match_in_value_check(self):
+        result = utils.is_match(2, [1, 3], constants.COMPARISON_IN)
+        assert result is False
+
+        result = utils.is_match(1, [1, 3], constants.COMPARISON_IN)
+        assert result is True
+
     @patch('django_mock_queries.utils.get_attribute')
     @patch('django_mock_queries.utils.is_match', MagicMock(return_value=True))
     def test_matches_includes_object_in_results_when_match(self, get_attr_mock):

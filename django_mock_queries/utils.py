@@ -38,6 +38,7 @@ def is_match(first, second, comparison=None):
         COMPARISON_GTE: lambda: first >= second,
         COMPARISON_LT: lambda: first < second,
         COMPARISON_LTE: lambda: first <= second,
+        COMPARISON_IN: lambda: first in second,
         COMPARISON_ISNULL: lambda: (first is None) == bool(second),
     }[comparison]()
 
