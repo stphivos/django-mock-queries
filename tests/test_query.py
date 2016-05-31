@@ -68,6 +68,18 @@ class TestQuery(TestCase):
         assert item_2 in results
         assert item_3 not in results
 
+    def test_query_exclude(self):
+        item_1 = MockModel(foo=1, bar='a')
+        item_2 = MockModel(foo=1, bar='b')
+        item_3 = MockModel(foo=2, bar='b')
+
+        self.mock_set.add(item_1, item_2, item_3)
+        results = list(self.mock_set.exclude(foo=1, bar='b'))
+
+        assert item_1 in results, results
+        assert item_2 not in results, results
+        assert item_3 in results, results
+
     def test_query_clears_all_items_from_set(self):
         self.mock_set.add(1, 2, 3)
         self.mock_set.clear()
