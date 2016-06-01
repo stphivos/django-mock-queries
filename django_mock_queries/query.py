@@ -3,7 +3,7 @@ from operator import attrgetter
 
 from .constants import *
 from .exceptions import *
-from .utils import matches, merge, intersect
+from .utils import matches, merge, intersect, get_attribute
 
 
 class MockBase(MagicMock):
@@ -113,6 +113,18 @@ def MockSet(*initial_items, **kwargs):
         }
 
     mock_set.aggregate = MagicMock(side_effect=aggregate)
+
+    def order_by(*fields):
+        results = items
+        for field in reversed(fields):
+            is_reversed = field.startswith('-')
+            attr = field[1:] if is_reversed else field
+            results = sorted(results,
+                             key=lambda r: get_attribute(r, attr),
+                             reverse=is_reversed)
+        return MockSet(*results, cls=cls)
+
+    mock_set.order_by = MagicMock(side_effect=order_by)
 
     def latest(field):
         result = sorted(items, key=attrgetter(field), reverse=True)
