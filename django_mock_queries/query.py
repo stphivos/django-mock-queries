@@ -19,7 +19,7 @@ class MockBase(MagicMock):
 
 def MockSet(*initial_items, **kwargs):
     items = list(initial_items)
-    cls = kwargs.get('cls', empty_func)
+    clone = kwargs.get('clone', None)
 
     mock_set = MockBase(spec=DjangoQuerySet, return_self_methods=[
         'all',
@@ -30,6 +30,9 @@ def MockSet(*initial_items, **kwargs):
         'prefetch_related',
         'select_for_update'
     ])
+    mock_set.cls = clone.cls if clone else kwargs.get('cls', empty_func)
+    mock_set.flat = clone.flat if clone else None
+    mock_set.projection = clone.projection if clone else None
     mock_set.count = MagicMock(side_effect=lambda: len(items))
 
     def add(*model):
@@ -69,14 +72,14 @@ def MockSet(*initial_items, **kwargs):
                 results = filter_q(results, x)
             else:
                 raise ArgumentNotSupported()
-        return MockSet(*matches(*results, **attrs), cls=cls)
+        return MockSet(*matches(*results, **attrs), clone=mock_set)
 
     mock_set.filter = MagicMock(side_effect=filter)
 
     def exclude(*args, **attrs):
         excluded = filter(*args, **attrs)
         results = [item for item in items if item not in excluded]
-        return MockSet(*results, cls=cls)
+        return MockSet(*results, clone=mock_set)
 
     mock_set.exclude = MagicMock(side_effect=exclude)
 
@@ -122,7 +125,7 @@ def MockSet(*initial_items, **kwargs):
             results = sorted(results,
                              key=lambda r: get_attribute(r, attr),
                              reverse=is_reversed)
-        return MockSet(*results, cls=cls)
+        return MockSet(*results, clone=mock_set)
 
     mock_set.order_by = MagicMock(side_effect=order_by)
 
@@ -148,7 +151,7 @@ def MockSet(*initial_items, **kwargs):
     mock_set.__iter__ = MagicMock(side_effect=__iter__)
 
     def create(**attrs):
-        obj = cls(**attrs)
+        obj = mock_set.cls(**attrs)
         if not obj:
             raise ModelNotSpecified()
         obj.save(force_insert=True, using=MagicMock())
