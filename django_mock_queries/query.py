@@ -35,6 +35,17 @@ def MockSet(*initial_items, **kwargs):
     mock_set.projection = clone.projection if clone else None
     mock_set.count = MagicMock(side_effect=lambda: len(items))
 
+    def project(index, source_items=None):
+        target_items = source_items or items
+        if not mock_set.projection:
+            return target_items[index]
+        elif mock_set.flat:
+            return getattr(target_items[index], mock_set.projection[0])
+        else:
+            return tuple([getattr(target_items[index], x) for x in mock_set.projection])
+
+    mock_set.project = MagicMock(side_effect=project)
+
     def add(*model):
         items.extend(model)
 
@@ -94,7 +105,7 @@ def MockSet(*initial_items, **kwargs):
     mock_set.exists = MagicMock(side_effect=exists)
 
     def get_item(x):
-        return items.__getitem__(x)
+        return project(x)
 
     mock_set.__getitem__ = MagicMock(side_effect=get_item)
 
@@ -130,23 +141,23 @@ def MockSet(*initial_items, **kwargs):
     mock_set.order_by = MagicMock(side_effect=order_by)
 
     def latest(field):
-        result = sorted(items, key=attrgetter(field), reverse=True)
-        if len(result) == 0:
+        results = sorted(items, key=attrgetter(field), reverse=True)
+        if len(results) == 0:
             raise ObjectDoesNotExist()
-        return result[0]
+        return project(0, source_items=results)
 
     mock_set.latest = MagicMock(side_effect=latest)
 
     def earliest(field):
-        result = sorted(items, key=attrgetter(field))
-        if len(result) == 0:
+        results = sorted(items, key=attrgetter(field))
+        if len(results) == 0:
             raise ObjectDoesNotExist()
-        return result[0]
+        return project(0, source_items=results)
 
     mock_set.earliest = MagicMock(side_effect=earliest)
 
     def __iter__():
-        return iter(items)
+        return iter([project(i) for i, v in enumerate(items)])
 
     mock_set.__iter__ = MagicMock(side_effect=__iter__)
 
@@ -167,7 +178,7 @@ def MockSet(*initial_items, **kwargs):
         elif results.count() > 1:
             raise MultipleObjectsReturned()
         else:
-            return results[0]
+            return project(0, source_items=results)
 
     mock_set.get = MagicMock(side_effect=get)
 
@@ -178,9 +189,24 @@ def MockSet(*initial_items, **kwargs):
         elif results.count() > 1:
             raise MultipleObjectsReturned()
         else:
-            return results[0], False
+            return project(0, source_items=results), False
 
     mock_set.get_or_create = MagicMock(side_effect=get_or_create)
+
+    def values_list(*fields, **kwargs):
+        flat = kwargs.pop('flat', False)
+
+        if kwargs:
+            raise TypeError('Unexpected keyword arguments to values_list: %s' % (list(kwargs),))
+        if flat and len(fields) > 1:
+            raise TypeError('`flat` is not valid when values_list is called with more than one field.')
+
+        mock_set.flat = flat
+        mock_set.projection = fields
+
+        return MockSet(*items, clone=mock_set)
+
+    mock_set.values_list = MagicMock(side_effect=values_list)
 
     return mock_set
 

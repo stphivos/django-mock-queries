@@ -14,6 +14,35 @@ class TestQuery(TestCase):
         items = [1, 2, 3]
         assert MockSet(*items).count() == len(items)
 
+    def test_query_project_returns_whole_item_by_index(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+
+        qs = MockSet(item_1, item_2)
+        assert qs.project(1) == item_2
+
+    def test_query_project_returns_item_flat_attribute(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+
+        qs = MockSet(item_1, item_2)
+        qs.flat = True
+        qs.projection = ['foo']
+
+        assert qs.project(1) == item_2.foo
+
+    def test_query_project_returns_item_specified_attributes_tuple(self):
+        item_1 = MockModel(foo=1, bar='a')
+        item_2 = MockModel(foo=2, bar='b')
+
+        qs = MockSet(item_1, item_2)
+        qs.flat = False
+        qs.projection = ['foo', 'bar']
+
+        attrs = qs.project(1)
+        assert attrs[0] == item_2.foo
+        assert attrs[1] == item_2.bar
+
     def test_query_adds_items_to_set(self):
         items = [1, 2, 3]
         self.mock_set.add(*items)
@@ -295,3 +324,22 @@ class TestQuery(TestCase):
         assert qs == qs.select_related('t1', 't2')
         assert qs == qs.prefetch_related('t3', 't4')
         assert qs == qs.select_for_update()
+
+    def test_query_values_list_raises_type_error_when_kwargs_other_than_flat_specified(self):
+        qs = MockSet(MockModel(foo=1), MockModel(foo=2))
+        self.assertRaises(TypeError, qs.values_list, arg='value')
+
+    def test_query_values_list_raises_type_error_when_flat_specified_with_multiple_fields(self):
+        qs = MockSet(MockModel(foo=1), MockModel(foo=2))
+        self.assertRaises(TypeError, qs.values_list, 'foo', 'bar', flat=True)
+
+    def test_query_values_list_returns_qs_clone_with_flat_and_projection_fields_set(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+
+        qs = MockSet(item_1, item_2)
+        projection = ('foo',)
+        obj = qs.values_list(*projection, flat=True)
+
+        assert obj.flat is True
+        assert obj.projection == projection
