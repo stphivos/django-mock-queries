@@ -145,6 +145,17 @@ def MockSet(*initial_items, **kwargs):
 
     mock_set.earliest = MagicMock(side_effect=earliest)
 
+    def first():
+        for item in items:
+            return item
+
+    mock_set.first = MagicMock(side_effect=first)
+
+    def last():
+        return items and items[-1] or None
+
+    mock_set.last = MagicMock(side_effect=last)
+
     def __iter__():
         return iter(items)
 
