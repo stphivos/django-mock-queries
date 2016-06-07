@@ -199,6 +199,36 @@ class TestQuery(TestCase):
 
         assert latest == item_3
 
+    def test_query_first_none(self):
+        first = self.mock_set.first()
+
+        assert first is None, first
+
+    def test_query_first(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+        item_3 = MockModel(foo=3)
+
+        self.mock_set.add(item_3, item_1, item_2)
+        first = self.mock_set.first()
+
+        assert first == item_3, first
+
+    def test_query_last_none(self):
+        last = self.mock_set.last()
+
+        assert last is None, last
+
+    def test_query_last(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+        item_3 = MockModel(foo=3)
+
+        self.mock_set.add(item_3, item_1, item_2)
+        last = self.mock_set.last()
+
+        assert last == item_2, last
+
     def test_query_latest_raises_error_exist_when_empty_set(self):
         self.mock_set.clear()
         self.assertRaises(Exception, self.mock_set.latest, 'foo')
