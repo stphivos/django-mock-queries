@@ -140,6 +140,12 @@ def MockSet(*initial_items, **kwargs):
 
     mock_set.order_by = MagicMock(side_effect=order_by)
 
+    def distinct():
+        results = set(items)
+        return MockSet(*results, clone=mock_set)
+
+    mock_set.distinct = MagicMock(side_effect=distinct)
+
     def latest(field):
         results = sorted(items, key=attrgetter(field), reverse=True)
         if len(results) == 0:
