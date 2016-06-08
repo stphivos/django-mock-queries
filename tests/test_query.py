@@ -267,6 +267,16 @@ class TestQuery(TestCase):
 
         assert results == [item_1, item_2, item_3], results
 
+    def test_query_distinct(self):
+        item_1 = MockModel(foo=1, mock_name='item_1')
+        item_2 = MockModel(foo=2, mock_name='item_2')
+        item_3 = MockModel(foo=3, mock_name='item_3')
+
+        self.mock_set.add(item_2, item_3, item_1, item_3)
+        results = list(self.mock_set.distinct().order_by('foo'))
+
+        assert results == [item_1, item_2, item_3], results
+
     def test_query_implements_iterator_on_items(self):
         items = [1, 2, 3]
         assert [x for x in MockSet(*items)] == items
