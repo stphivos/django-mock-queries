@@ -1,5 +1,6 @@
 -r requirements.txt
 
+flake8==2.5.4
 pytest==2.8.2
 pytest-cov==2.2.0
 pytest-flake8==0.2

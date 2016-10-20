@@ -3,6 +3,8 @@ from model_mommy import mommy
 
 from .constants import *
 
+SkipField = locate('rest_framework.fields.SkipField')
+
 
 class SerializerAssert:
     _obj = None
