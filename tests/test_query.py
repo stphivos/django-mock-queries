@@ -97,6 +97,34 @@ class TestQuery(TestCase):
         assert item_2 in results
         assert item_3 not in results
 
+    def test_query_filters_items_by_subclass(self):
+        """ Mock a multi-table inheritance relation and filter on it. """
+
+        class AnimalModel(object):
+            def __init__(self, name):
+                self.name = name
+
+            def __repr__(self):
+                return 'DummyModel({!r})'.format(self.name)
+
+        item_1 = AnimalModel('item_1')
+        item_2 = AnimalModel('item_2')
+        item_3 = AnimalModel('item_3')
+
+        item_2.cat = item_2  # This one is a cat subclass, the others aren't.
+
+        self.mock_set.add(item_1, item_2, item_3)
+        results1 = list(self.mock_set.filter(name='item_3'))
+        results2 = list(self.mock_set.filter(cat__isnull=False))
+
+        assert item_1 not in results1
+        assert item_2 not in results1
+        assert item_3 in results1
+
+        assert item_1 not in results2
+        assert item_2 in results2
+        assert item_3 not in results2
+
     def test_query_exclude(self):
         item_1 = MockModel(foo=1, bar='a')
         item_2 = MockModel(foo=1, bar='b')

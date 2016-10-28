@@ -22,7 +22,7 @@ def get_attribute(obj, attr, default=None):
         else:
             result = getattr(result, p, None)
 
-    value = result if result != obj else default
+    value = result if result is not None else default
     return value, comparison
 
 
