@@ -60,6 +60,18 @@ class TestUtils(TestCase):
         assert value == default_value
         assert comparison is None
 
+    def test_get_attribute_raises_type_error_when_nested_object_attribute_is_undefined(self):
+        obj = MagicMock(child=object())
+        default_value = ''
+        self.assertRaises(TypeError, utils.get_attribute, obj, 'child__foo', default_value)
+
+    def test_get_attribute_returns_default_value_when_nested_object_attribute_is_none(self):
+        obj = MagicMock(child=MagicMock(foo=None))
+        default_value = ''
+        value, comparison = utils.get_attribute(obj, 'child__foo', default_value)
+        assert value == default_value
+        assert comparison is None
+
     def test_is_match_equality_check_when_comparison_none(self):
         result = utils.is_match(1, 1)
         assert result is True
