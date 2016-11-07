@@ -11,18 +11,19 @@ def intersect(first, second):
 
 def get_attribute(obj, attr, default=None):
     result = obj
-    comparison = None
-    parts = attr.split('__')
+    lookup = '__'
+    parts = attr.split(lookup)
+    comparison = parts[-1] if lookup in attr and parts[-1] in COMPARISONS else None
 
     for p in parts:
-        if p in COMPARISONS:
-            comparison = p
-        elif result is None:
+        if result is None or p == comparison:
             break
+        elif not hasattr(result, p):
+            raise TypeError('Related Field got invalid lookup: {}'.format(p))
         else:
-            result = getattr(result, p, None)
+            result = getattr(result, p)
 
-    value = result if result != obj else default
+    value = default if result is None else result
     return value, comparison
 
 
