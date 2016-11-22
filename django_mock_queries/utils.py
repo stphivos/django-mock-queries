@@ -1,3 +1,5 @@
+from django.core.exceptions import FieldError
+
 from .constants import *
 
 
@@ -7,6 +9,16 @@ def merge(first, second):
 
 def intersect(first, second):
     return list(set(first).intersection(second))
+
+
+def find_field_names(obj):
+    field_names = set()
+    field_names.update(obj._meta._forward_fields_map.keys())
+    field_names.update(obj._meta.fields_map.keys())
+    for parent in obj._meta.parents.keys():
+        parent_fields = find_field_names(parent) or []
+        field_names.update(parent_fields)
+    return sorted(field_names)
 
 
 def get_attribute(obj, attr, default=None):
@@ -20,9 +32,16 @@ def get_attribute(obj, attr, default=None):
         elif result is None:
             break
         else:
+            field_names = find_field_names(result)
+            if p != 'pk' and field_names and p not in field_names:
+                message = "Cannot resolve keyword '{}' into field. Choices are {}.".format(
+                    p,
+                    ', '.join(map(repr, map(str, field_names)))
+                )
+                raise FieldError(message)
             result = getattr(result, p, None)
 
-    value = result if result != obj else default
+    value = result if result is not None else default
     return value, comparison
 
 
