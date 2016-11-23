@@ -21,6 +21,10 @@ class Car(models.Model):
         return '{0} km/h'.format(self.speed)
 
 
+class Sedan(Car):
+    pass
+
+
 class CarSerializer(serializers.ModelSerializer):
     make = ManufacturerSerializer()
     speed = serializers.SerializerMethodField()
