@@ -1,23 +1,12 @@
 from mock import MagicMock, ANY
 from unittest import TestCase
 
-from django.db import models
 from django.core.exceptions import FieldError
 
 from django_mock_queries.constants import *
 from django_mock_queries.exceptions import ModelNotSpecified
 from django_mock_queries.query import MockSet, MockModel
-
-
-class DummyModel(models.Model):
-    dummy_field = models.CharField(max_length=30)
-
-    def __repr__(self):
-        return 'DummyModel({!r})'.format(self.dummy_field)
-
-
-class DummyChild(DummyModel):
-    description = models.CharField(max_length=30)
+from tests.mock_models import Car, Sedan
 
 
 class TestQuery(TestCase):
@@ -112,32 +101,32 @@ class TestQuery(TestCase):
         assert item_3 not in results
 
     def test_query_filters_model_objects(self):
-        item_1 = DummyModel(dummy_field='item_1')
-        item_2 = DummyChild(dummy_field='item_2')
-        item_3 = DummyModel(dummy_field='item_3')
+        item_1 = Car(speed=1)
+        item_2 = Sedan(speed=2)
+        item_3 = Car(speed=3)
 
-        item_2.dummychild = item_2
+        item_2.sedan = item_2
 
         self.mock_set.add(item_1, item_2, item_3)
-        results = list(self.mock_set.filter(dummy_field='item_3'))
+        results = list(self.mock_set.filter(speed=3))
 
         assert results == [item_3]
 
     def test_query_filters_model_objects_by_subclass(self):
-        item_1 = DummyModel(dummy_field='item_1')
-        item_2 = DummyChild(dummy_field='item_2')
-        item_3 = DummyModel(dummy_field='item_3')
+        item_1 = Car(speed=1)
+        item_2 = Sedan(speed=2)
+        item_3 = Car(speed=3)
 
-        item_2.dummychild = item_2
+        item_2.sedan = item_2
 
         self.mock_set.add(item_1, item_2, item_3)
-        results = list(self.mock_set.filter(dummychild__isnull=False))
+        results = list(self.mock_set.filter(sedan__isnull=False))
 
         assert results == [item_2]
 
     def test_query_filters_model_objects_by_pk(self):
-        item_1 = DummyModel(dummy_field='item_1', id=101)
-        item_2 = DummyModel(dummy_field='item_3', id=102)
+        item_1 = Car(speed=1, id=101)
+        item_2 = Car(speed=2, id=102)
 
         self.mock_set.add(item_1, item_2)
         results = list(self.mock_set.filter(pk=102))
@@ -145,17 +134,17 @@ class TestQuery(TestCase):
         assert results == [item_2]
 
     def test_query_filters_model_objects_by_bad_field(self):
-        item_1 = DummyModel(dummy_field='item_1')
-        item_2 = DummyChild(dummy_field='item_2')
-        item_3 = DummyModel(dummy_field='item_3')
+        item_1 = Car(speed=1)
+        item_2 = Sedan(speed=2)
+        item_3 = Car(speed=3)
 
-        item_2.dummychild = item_2
+        item_2.sedan = item_2
 
         self.mock_set.add(item_1, item_2, item_3)
         with self.assertRaisesRegexp(
                 FieldError,
                 r"Cannot resolve keyword 'bad_field' into field\. "
-                r"Choices are 'dummy_field', 'dummychild', 'id'\."):
+                r"Choices are 'id', 'make', 'make_id', 'model', 'sedan', 'speed'\."):
             self.mock_set.filter(bad_field='bogus')
 
     def test_query_exclude(self):
