@@ -1,9 +1,12 @@
 from mock import MagicMock, ANY
 from unittest import TestCase
 
+from django.core.exceptions import FieldError
+
 from django_mock_queries.constants import *
 from django_mock_queries.exceptions import ModelNotSpecified
 from django_mock_queries.query import MockSet, MockModel
+from tests.mock_models import Car, Sedan
 
 
 class TestQuery(TestCase):
@@ -96,6 +99,53 @@ class TestQuery(TestCase):
         assert item_1 not in results
         assert item_2 in results
         assert item_3 not in results
+
+    def test_query_filters_model_objects(self):
+        item_1 = Car(speed=1)
+        item_2 = Sedan(speed=2)
+        item_3 = Car(speed=3)
+
+        item_2.sedan = item_2
+
+        self.mock_set.add(item_1, item_2, item_3)
+        results = list(self.mock_set.filter(speed=3))
+
+        assert results == [item_3]
+
+    def test_query_filters_model_objects_by_subclass(self):
+        item_1 = Car(speed=1)
+        item_2 = Sedan(speed=2)
+        item_3 = Car(speed=3)
+
+        item_2.sedan = item_2
+
+        self.mock_set.add(item_1, item_2, item_3)
+        results = list(self.mock_set.filter(sedan__isnull=False))
+
+        assert results == [item_2]
+
+    def test_query_filters_model_objects_by_pk(self):
+        item_1 = Car(speed=1, id=101)
+        item_2 = Car(speed=2, id=102)
+
+        self.mock_set.add(item_1, item_2)
+        results = list(self.mock_set.filter(pk=102))
+
+        assert results == [item_2]
+
+    def test_query_filters_model_objects_by_bad_field(self):
+        item_1 = Car(speed=1)
+        item_2 = Sedan(speed=2)
+        item_3 = Car(speed=3)
+
+        item_2.sedan = item_2
+
+        self.mock_set.add(item_1, item_2, item_3)
+        with self.assertRaisesRegexp(
+                FieldError,
+                r"Cannot resolve keyword 'bad_field' into field\. "
+                r"Choices are 'id', 'make', 'make_id', 'model', 'sedan', 'speed'\."):
+            self.mock_set.filter(bad_field='bogus')
 
     def test_query_exclude(self):
         item_1 = MockModel(foo=1, bar='a')
