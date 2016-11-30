@@ -2,9 +2,10 @@ from mock import MagicMock, ANY
 from unittest import TestCase
 
 from django.core.exceptions import FieldError
+from django.db.models import Q
 
 from django_mock_queries.constants import *
-from django_mock_queries.exceptions import ModelNotSpecified
+from django_mock_queries.exceptions import ModelNotSpecified, ArgumentNotSupported
 from django_mock_queries.query import MockSet, MockModel
 from tests.mock_models import Car, Sedan
 
@@ -79,9 +80,8 @@ class TestQuery(TestCase):
         item_2 = MockModel(mock_name='#2', foo=2)
         item_3 = MockModel(mock_name='#3', foo=3)
 
-        source = [item_1, item_2, item_3]
-        query = MagicMock(connector=CONNECTORS_OR, children=[('foo', 1), ('foo', 2)])
-        results = self.mock_set.filter_q(source, query)
+        self.mock_set.add(item_1, item_2, item_3)
+        results = list(self.mock_set.filter(Q(foo=1) | Q(foo=2)))
 
         assert item_1 in results
         assert item_2 in results
@@ -92,13 +92,18 @@ class TestQuery(TestCase):
         item_2 = MockModel(mock_name='#2', foo=1, bar='b')
         item_3 = MockModel(mock_name='#3', foo=3, bar='b')
 
-        source = [item_1, item_2, item_3]
-        query = MagicMock(connector=CONNECTORS_AND, children=[('foo', 1), ('bar', 'b')])
-        results = self.mock_set.filter_q(source, query)
+        self.mock_set.add(item_1, item_2, item_3)
+        results = list(self.mock_set.filter(Q(foo=1) & Q(bar='b')))
 
         assert item_1 not in results
         assert item_2 in results
         assert item_3 not in results
+
+    def test_query_filters_items_by_unsupported_object(self):
+        bogus_filter = 'This is not a filter.'
+
+        with self.assertRaises(ArgumentNotSupported):
+            self.mock_set.filter(bogus_filter)
 
     def test_query_filters_model_objects(self):
         item_1 = Car(speed=1)
