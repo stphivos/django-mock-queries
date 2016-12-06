@@ -5,7 +5,7 @@
 
 # Django Mock Queries
 
-A library for mocking django queryset functions in memory for testing
+A library for mocking Django queryset functions in memory for testing
 
 ## Features
 
@@ -67,7 +67,7 @@ def active_users(self):
     return User.objects.filter(is_active=True).all()
 
 """
-Test function applies expected filters by patching django's user model Manager or Queryset with a MockSet
+Test function applies expected filters by patching Django's user model Manager or Queryset with a MockSet
 """
 from django_mock_queries.query import MockSet, MockModel
 
@@ -123,6 +123,12 @@ def test_car_serializer_fields(self):
         .mocks('make') \
         .run()
 ```
+
+### Full Example
+There is a full Django application in the `examples/users` folder. It shows how
+to configure `django_mock_queries` in your tests and run them with or without
+setting up a Django database. Running the mock tests without a database can be
+much faster when your Django application has a lot of database migrations.
 
 ## Installation
 

@@ -1,6 +1,53 @@
+from mock import MagicMock
+import os
+import sys
+
+import django
+from django.apps import apps
 from django.core.exceptions import FieldError
+from django.db import connections
+from django.db.utils import ConnectionHandler, NotSupportedError
 
 from .constants import *
+
+
+def mock_django_setup(settings_module):
+    """ Must be called *AT IMPORT TIME* to pretend that Django is set up.
+
+    This must be called before any Django models are imported, or they will
+    complain. Call this from a module in the calling project at import time,
+    then be sure to import that module at the start of all mock test modules.
+    :param settings_module: the module name of the Django settings file,
+        like 'myapp.settings'
+    """
+    if apps.ready:
+        # We're running in a real Django unit test, don't do anything.
+        return
+
+    if 'DJANGO_SETTINGS_MODULE' not in os.environ:
+        os.environ['DJANGO_SETTINGS_MODULE'] = settings_module
+    django.setup()
+
+    # Disable database access, these are pure unit tests.
+    db = connections.databases['default']
+    db['PASSWORD'] = '****'
+    db['USER'] = '**Database disabled for unit tests**'
+    ConnectionHandler.__getitem__ = MagicMock(name='mock_connection')
+    # noinspection PyUnresolvedReferences
+    mock_ops = ConnectionHandler.__getitem__.return_value.ops
+
+    # noinspection PyUnusedLocal
+    def compiler(queryset, connection, using, **kwargs):
+        result = MagicMock(name='mock_connection.ops.compiler()')
+        # noinspection PyProtectedMember
+        result.execute_sql.side_effect = NotSupportedError(
+            "Mock database tried to execute SQL for {} model.".format(
+                queryset.model._meta.object_name))
+        return result
+
+    mock_ops.compiler.return_value.side_effect = compiler
+    mock_ops.integer_field_range.return_value = (-sys.maxsize - 1, sys.maxsize)
+    mock_ops.max_name_length.return_value = sys.maxsize
 
 
 def merge(first, second):
@@ -11,6 +58,7 @@ def intersect(first, second):
     return list(set(first).intersection(second))
 
 
+# noinspection PyProtectedMember
 def find_field_names(obj):
     field_names = set()
     field_names.update(obj._meta._forward_fields_map.keys())
