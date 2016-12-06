@@ -1,7 +1,9 @@
+from django.db.utils import NotSupportedError
 from mock import patch, MagicMock
 from unittest import TestCase
 
 from django_mock_queries import utils, constants
+from tests.mock_models import Car
 
 
 class TestUtils(TestCase):
@@ -182,3 +184,14 @@ class TestUtils(TestCase):
 
         for x in source:
             assert x not in results
+
+    def test_mock_sql_raises_error(self):
+        """ Get a clear error if you forget to mock a database query. """
+        with self.assertRaisesRegexp(
+                NotSupportedError,
+                "Mock database tried to execute SQL for Car model."):
+            Car.objects.count()
+
+    def test_mock_django_setup_called_again(self):
+        """ Shouldn't do anything the second time you call. """
+        utils.mock_django_setup('tests.mock_settings')
