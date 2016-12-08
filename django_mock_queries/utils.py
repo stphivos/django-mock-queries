@@ -6,12 +6,35 @@ import django
 from django.apps import apps
 from django.core.exceptions import FieldError
 from django.db import connections
+from django.db.backends.base import creation
 from django.db.utils import ConnectionHandler, NotSupportedError
 
 from .constants import *
 
 
-def mock_django_setup(settings_module):
+def monkey_patch_test_db(disabled_features=None):
+    """ Replace the real database connection with a mock one.
+
+    Any database queries will raise a clear error, and the test database
+    creation and tear down are skipped.
+    Tests that require the real database should be decorated with
+    @skipIfDBFeature('is_mocked')
+    :param disabled_features: a list of strings that should be marked as
+        *False* on the connection features list. All others will default
+        to True.
+    """
+
+    def create_mock_test_db(self, *args, **kwargs):
+        mock_django_connection(disabled_features)
+
+    def destroy_mock_test_db(self, *args, **kwargs):
+        pass
+
+    creation.BaseDatabaseCreation.create_test_db = create_mock_test_db
+    creation.BaseDatabaseCreation.destroy_test_db = destroy_mock_test_db
+
+
+def mock_django_setup(settings_module, disabled_features=None):
     """ Must be called *AT IMPORT TIME* to pretend that Django is set up.
 
     This must be called before any Django models are imported, or they will
@@ -19,6 +42,9 @@ def mock_django_setup(settings_module):
     then be sure to import that module at the start of all mock test modules.
     :param settings_module: the module name of the Django settings file,
         like 'myapp.settings'
+    :param disabled_features: a list of strings that should be marked as
+        *False* on the connection features list. All others will default
+        to True.
     """
     if apps.ready:
         # We're running in a real Django unit test, don't do anything.
@@ -27,14 +53,20 @@ def mock_django_setup(settings_module):
     if 'DJANGO_SETTINGS_MODULE' not in os.environ:
         os.environ['DJANGO_SETTINGS_MODULE'] = settings_module
     django.setup()
+    mock_django_connection(disabled_features)
 
-    # Disable database access, these are pure unit tests.
+
+def mock_django_connection(disabled_features=None):
     db = connections.databases['default']
     db['PASSWORD'] = '****'
     db['USER'] = '**Database disabled for unit tests**'
     ConnectionHandler.__getitem__ = MagicMock(name='mock_connection')
     # noinspection PyUnresolvedReferences
-    mock_ops = ConnectionHandler.__getitem__.return_value.ops
+    mock_connection = ConnectionHandler.__getitem__.return_value
+    if disabled_features:
+        for feature in disabled_features:
+            setattr(mock_connection.features, feature, False)
+    mock_ops = mock_connection.ops
 
     # noinspection PyUnusedLocal
     def compiler(queryset, connection, using, **kwargs):
