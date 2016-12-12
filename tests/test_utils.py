@@ -1,7 +1,7 @@
 from mock import patch, MagicMock
 from unittest import TestCase
 
-from django_mock_queries import utils, constants
+from django_mock_queries import utils, constants, query
 
 
 class TestUtils(TestCase):
@@ -59,6 +59,12 @@ class TestUtils(TestCase):
         value, comparison = utils.get_attribute(obj, 'foo', default_value)
         assert value == default_value
         assert comparison is None
+
+    def test_get_attribute_raises_exception_when_spec_set_is_true(self):
+        obj = query.MockModel(spec_set=True, foo='foo_value')
+        assert getattr(obj, 'bar', None) is None
+        with self.assertRaises(AttributeError):
+            getattr(obj, 'bar')
 
     def test_is_match_equality_check_when_comparison_none(self):
         result = utils.is_match(1, 1)
