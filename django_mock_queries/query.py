@@ -232,8 +232,8 @@ def MockSet(*initial_items, **kwargs):
     return mock_set
 
 
-def MockModel(cls=None, mock_name=None, **attrs):
-    mock_attrs = dict(spec=cls, name=mock_name)
+def MockModel(cls=None, mock_name=None, spec_set=None, **attrs):
+    mock_attrs = dict(spec=cls, name=mock_name, spec_set=spec_set)
     mock_model = MagicMock(**mock_attrs)
 
     if mock_name:
