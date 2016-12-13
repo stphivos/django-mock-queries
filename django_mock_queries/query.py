@@ -111,14 +111,18 @@ def MockSet(*initial_items, **kwargs):
 
     def aggregate(expr):
         # TODO: Support multi expressions in aggregate functions
-        values = [getattr(x, expr.source_expressions[0].name) for x in items]
-        result = {
-            AGGREGATES_SUM: lambda: sum(values),
-            AGGREGATES_COUNT: lambda: len(values),
-            AGGREGATES_MAX: lambda: max(values),
-            AGGREGATES_MIN: lambda: min(values),
-            AGGREGATES_AVG: lambda: sum(values) / len(values)
-        }[expr.function]()
+        values = [y for y in [getattr(x, expr.source_expressions[0].name) for x in items] if y is not None]
+        result = None
+        if len(values) > 0:
+            result = {
+                AGGREGATES_SUM: lambda: sum(values),
+                AGGREGATES_COUNT: lambda: len(values),
+                AGGREGATES_MAX: lambda: max(values),
+                AGGREGATES_MIN: lambda: min(values),
+                AGGREGATES_AVG: lambda: sum(values) / len(values)
+            }[expr.function]()
+        if len(values) == 0 and expr.function == AGGREGATES_COUNT:
+            result = 0
 
         output_field = '{0}__{1}'.format(expr.source_expressions[0].name, expr.function).lower()
 
@@ -228,8 +232,8 @@ def MockSet(*initial_items, **kwargs):
     return mock_set
 
 
-def MockModel(cls=None, mock_name=None, **attrs):
-    mock_attrs = dict(spec=cls, name=mock_name)
+def MockModel(cls=None, mock_name=None, spec_set=None, **attrs):
+    mock_attrs = dict(spec=cls, name=mock_name, spec_set=spec_set)
     mock_model = MagicMock(**mock_attrs)
 
     if mock_name:
