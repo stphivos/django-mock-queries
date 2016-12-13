@@ -1,13 +1,12 @@
-from mock import MagicMock
 import os
 import sys
-
 import django
 from django.apps import apps
 from django.core.exceptions import FieldError
 from django.db import connections
 from django.db.backends.base import creation
 from django.db.utils import ConnectionHandler, NotSupportedError
+from mock import MagicMock
 
 from .constants import *
 
