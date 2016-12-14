@@ -109,26 +109,25 @@ def MockSet(*initial_items, **kwargs):
 
     mock_set.__getitem__ = MagicMock(side_effect=get_item)
 
-    def aggregate(expr):
-        # TODO: Support multi expressions in aggregate functions
-        values = [y for y in [getattr(x, expr.source_expressions[0].name) for x in items] if y is not None]
-        result = None
-        if len(values) > 0:
-            result = {
-                AGGREGATES_SUM: lambda: sum(values),
-                AGGREGATES_COUNT: lambda: len(values),
-                AGGREGATES_MAX: lambda: max(values),
-                AGGREGATES_MIN: lambda: min(values),
-                AGGREGATES_AVG: lambda: sum(values) / len(values)
-            }[expr.function]()
-        if len(values) == 0 and expr.function == AGGREGATES_COUNT:
-            result = 0
-
-        output_field = '{0}__{1}'.format(expr.source_expressions[0].name, expr.function).lower()
-
-        return {
-            output_field: result
-        }
+    def aggregate(*args, **kwargs):
+        result = {}
+        for expr in args:
+            kwargs['{0}__{1}'.format(expr.source_expressions[0].name, expr.function).lower()] = expr
+        for alias, expr in kwargs.items():
+            values = [y for y in [getattr(x, expr.source_expressions[0].name) for x in items] if y is not None]
+            expr_result = None
+            if len(values) > 0:
+                expr_result = {
+                    AGGREGATES_SUM: lambda: sum(values),
+                    AGGREGATES_COUNT: lambda: len(values),
+                    AGGREGATES_MAX: lambda: max(values),
+                    AGGREGATES_MIN: lambda: min(values),
+                    AGGREGATES_AVG: lambda: sum(values) / len(values)
+                }[expr.function]()
+            if len(values) == 0 and expr.function == AGGREGATES_COUNT:
+                expr_result = 0
+            result[alias] = expr_result
+        return result
 
     mock_set.aggregate = MagicMock(side_effect=aggregate)
 
