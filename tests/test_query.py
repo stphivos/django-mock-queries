@@ -253,7 +253,7 @@ class TestQuery(TestCase):
             [x.foo for x in items if x.foo is not None]
         )
 
-    def test_query_with_none_only_field_values_performs_correct_aggregation(self):
+    def test_query_aggregate_with_none_only_field_values_performs_correct_aggregation(self):
         items = [
             MockModel(foo=None),
             MockModel(foo=None),
@@ -280,7 +280,7 @@ class TestQuery(TestCase):
         assert result_count['foo__count'] == 0
         assert result_avg['foo__avg'] is None
 
-    def test_query_multiple_params_aggregaion(self):
+    def test_query_aggregate_multiple_params_aggregation(self):
         items = [
             MockModel(foo=5),
             MockModel(foo=10),
@@ -317,7 +317,7 @@ class TestQuery(TestCase):
             [x.foo for x in items if x.foo is not None]
         )
 
-    def test_query_multiple_params_aggregaion_with_none(self):
+    def test_query_aggregate_multiple_params_with_none_only_field_values_aggregation_with_none(self):
         items = [
             MockModel(foo=None),
             MockModel(foo=None),
@@ -346,10 +346,10 @@ class TestQuery(TestCase):
         assert result['count'] == 0
         assert result['avg'] is None
 
-    def test_aggregate_with_no_params_returns_empty_dict(self):
+    def test_query_aggregate_with_no_params_returns_empty_dict(self):
         assert self.mock_set.aggregate() == {}
 
-    def test_aggregate_converts_args_to_unique_expressions(self):
+    def test_query_aggregate_multiple_params_expression_distinction(self):
         expr_sum = MagicMock(function=AGGREGATES_SUM, source_expressions=[MockModel(name='foo')])
         expr_max = MagicMock(function=AGGREGATES_MAX, source_expressions=[MockModel(name='foo')])
         expr_min = MagicMock(function=AGGREGATES_MIN, source_expressions=[MockModel(name='foo')])
