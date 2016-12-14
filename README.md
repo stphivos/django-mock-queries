@@ -145,6 +145,10 @@ Then run your Django tests with the new settings file:
 
     ./manage.py test --settings=users.settings_mocked
 
+Here's the pytest equivalent:
+
+    pytest --ds=users.settings_mocked
+
 That will run your tests without setting up a test database. All of your tests
 that use Django mock queries should run fine, but what about the tests that
 really need a database?
