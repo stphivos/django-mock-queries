@@ -111,7 +111,7 @@ def MockSet(*initial_items, **kwargs):
 
     def aggregate(*args, **kwargs):
         result = {}
-        for expr in args:
+        for expr in set(args):
             kwargs['{0}__{1}'.format(expr.source_expressions[0].name, expr.function).lower()] = expr
         for alias, expr in kwargs.items():
             values = [y for y in [getattr(x, expr.source_expressions[0].name) for x in items] if y is not None]
