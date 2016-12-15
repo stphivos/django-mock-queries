@@ -134,12 +134,14 @@ To run your Django tests without a database, add a new settings file, and call
 `monkey_patch_test_db()`. Use a wildcard import to get all the regular settings
 as well.
 
-    # settings_mocked.py
-    from django_mock_queries.mocks import monkey_patch_test_db
-    
-    from users.settings import *
-    
-    monkey_patch_test_db()
+```python
+# settings_mocked.py
+from django_mock_queries.mocks import monkey_patch_test_db
+
+from users.settings import *
+
+monkey_patch_test_db()
+```
 
 Then run your Django tests with the new settings file:
 
@@ -165,16 +167,17 @@ If you want to run your tests without a database, you need to tell Django
 to skip the tests that need a database. You can do that by putting a skip
 decorator on the test classes or test methods that need a database.
 
-    @skipIfDBFeature('is_mocked')
-    class TestApi(TestCase):
-        def test_create(self):
-            start_count = User.objects.count()
-    
-            User.objects.create(username='bob')
-            final_count = User.objects.count()
-    
-            self.assertEqual(start_count+1, final_count)
+```python
+@skipIfDBFeature('is_mocked')
+class TestApi(TestCase):
+    def test_create(self):
+        start_count = User.objects.count()
 
+        User.objects.create(username='bob')
+        final_count = User.objects.count()
+
+        self.assertEqual(start_count + 1, final_count)
+```
 
 ## Installation
 
