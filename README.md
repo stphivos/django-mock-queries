@@ -5,7 +5,7 @@
 
 # Django Mock Queries
 
-A library for mocking django queryset functions in memory for testing
+A library for mocking Django queryset functions in memory for testing
 
 ## Features
 
@@ -67,7 +67,7 @@ def active_users(self):
     return User.objects.filter(is_active=True).all()
 
 """
-Test function applies expected filters by patching django's user model Manager or Queryset with a MockSet
+Test function applies expected filters by patching Django's user model Manager or Queryset with a MockSet
 """
 from django_mock_queries.query import MockSet, MockModel
 
@@ -123,6 +123,58 @@ def test_car_serializer_fields(self):
         .mocks('make') \
         .run()
 ```
+
+### Full Example
+There is a full Django application in the `examples/users` folder. It shows how
+to configure `django_mock_queries` in your tests and run them with or without
+setting up a Django database. Running the mock tests without a database can be
+much faster when your Django application has a lot of database migrations.
+
+To run your Django tests without a database, add a new settings file, and call
+`monkey_patch_test_db()`. Use a wildcard import to get all the regular settings
+as well.
+
+    # settings_mocked.py
+    from django_mock_queries.mocks import monkey_patch_test_db
+    
+    from users.settings import *
+    
+    monkey_patch_test_db()
+
+Then run your Django tests with the new settings file:
+
+    ./manage.py test --settings=users.settings_mocked
+
+Here's the pytest equivalent:
+
+    pytest --ds=users.settings_mocked
+
+That will run your tests without setting up a test database. All of your tests
+that use Django mock queries should run fine, but what about the tests that
+really need a database?
+
+    ERROR: test_create (examples.users.analytics.tests.TestApi)
+    ----------------------------------------------------------------------
+    Traceback (most recent call last):
+      File "/.../examples/users/analytics/tests.py", line 28, in test_create
+        start_count = User.objects.count()
+      [...]
+    NotSupportedError: Mock database tried to execute SQL for User model.
+
+If you want to run your tests without a database, you need to tell Django
+to skip the tests that need a database. You can do that by putting a skip
+decorator on the test classes or test methods that need a database.
+
+    @skipIfDBFeature('is_mocked')
+    class TestApi(TestCase):
+        def test_create(self):
+            start_count = User.objects.count()
+    
+            User.objects.create(username='bob')
+            final_count = User.objects.count()
+    
+            self.assertEqual(start_count+1, final_count)
+
 
 ## Installation
 

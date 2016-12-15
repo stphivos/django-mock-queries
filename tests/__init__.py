@@ -1,7 +1,3 @@
-import os
+from django_mock_queries.mocks import mock_django_setup
 
-from django.core.wsgi import get_wsgi_application
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tests.mock_settings')
-
-application = get_wsgi_application()
+mock_django_setup('tests.mock_settings')

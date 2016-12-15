@@ -11,6 +11,7 @@ def intersect(first, second):
     return list(set(first).intersection(second))
 
 
+# noinspection PyProtectedMember
 def find_field_names(obj):
     field_names = set()
     field_names.update(obj._meta._forward_fields_map.keys())
