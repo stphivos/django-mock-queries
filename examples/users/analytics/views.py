@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 
-from api import AnalyticsApi
+from analytics.api import AnalyticsApi
 api = AnalyticsApi()
 
 
