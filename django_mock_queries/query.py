@@ -232,6 +232,10 @@ def MockSet(*initial_items, **kwargs):
 
 
 def MockModel(cls=None, mock_name=None, spec_set=None, **attrs):
+    """
+    Be aware that spec_set=True can be used only when mocking models that are not based on real Django project models.
+    Always check "if not hasattr(obj, '_spec_set'):" if there is an access to Django model class member (e. g. "_meta")
+    """
     mock_attrs = dict(spec=cls, name=mock_name, spec_set=spec_set)
     mock_model = MagicMock(**mock_attrs)
 

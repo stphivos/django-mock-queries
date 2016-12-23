@@ -60,8 +60,14 @@ class TestUtils(TestCase):
         assert value == default_value
         assert comparison is None
 
-    def test_get_attribute_raises_exception_when_spec_set_is_true(self):
-        obj = query.MockModel(spec_set=True, foo='foo_value')
+    def test_get_attribute_returns_value_when_spec_set_is_true(self):
+        obj = query.MockModel(spec_set=True, foo='foo')
+        value, comparison = utils.get_attribute(obj, 'foo')
+        assert value == 'foo'
+        assert comparison is None
+
+    def test_getattr_builtin_raises_exception_when_spec_set_is_true(self):
+        obj = query.MockModel(spec_set=True, foo='foo')
         assert getattr(obj, 'bar', None) is None
         with self.assertRaises(AttributeError):
             getattr(obj, 'bar')

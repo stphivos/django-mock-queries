@@ -33,13 +33,14 @@ def get_attribute(obj, attr, default=None):
         elif result is None:
             break
         else:
-            field_names = find_field_names(result)
-            if p != 'pk' and field_names and p not in field_names:
-                message = "Cannot resolve keyword '{}' into field. Choices are {}.".format(
-                    p,
-                    ', '.join(map(repr, map(str, field_names)))
-                )
-                raise FieldError(message)
+            if not hasattr(obj, '_spec_set'):
+                field_names = find_field_names(result)
+                if p != 'pk' and field_names and p not in field_names:
+                    message = "Cannot resolve keyword '{}' into field. Choices are {}.".format(
+                        p,
+                        ', '.join(map(repr, map(str, field_names)))
+                    )
+                    raise FieldError(message)
             result = getattr(result, p, None)
 
     value = result if result is not None else default
