@@ -149,7 +149,7 @@ class TestQuery(TestCase):
         with self.assertRaisesRegexp(
                 FieldError,
                 r"Cannot resolve keyword 'bad_field' into field\. "
-                r"Choices are 'id', 'make', 'make_id', 'model', 'sedan', 'speed'\."):
+                r"Choices are 'id', 'make', 'make_id', 'model', 'passengers', 'sedan', 'speed'\."):
             self.mock_set.filter(bad_field='bogus')
 
     def test_query_exclude(self):

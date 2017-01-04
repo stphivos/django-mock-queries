@@ -7,7 +7,7 @@
 click==6.6                # via pip-tools
 configparser==3.5.0       # via flake8
 coverage==3.7.1
-Django==1.8.12            # via model-mommy
+# Django==1.8.12            # via model-mommy, manually excluded for tox
 djangorestframework==3.3.2
 enum34==1.1.6             # via flake8
 first==2.0.1              # via pip-tools
