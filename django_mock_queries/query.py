@@ -215,7 +215,7 @@ def MockSet(*initial_items, **kwargs):
             for item in items:
                 a = list()
                 for field in fields:
-                    if field not in item._meta.fields_map.keys():
+                    if field not in item._meta._forward_fields_map.keys():
                         raise AttributeError('Mocked model %s has no field %s' % (item, field))
                     a.append(getattr(item, field))
                 if flat:
@@ -232,13 +232,13 @@ def MockSet(*initial_items, **kwargs):
         for item in items:
             if len(fields) == 0:
                 item_dict = {}
-                for field in item._meta.fields_map.keys():
+                for field in item._meta._forward_fields_map.keys():
                     item_dict[field] = getattr(item, field)
                 result.append(item_dict)
             else:
                 item_dict = {}
                 for field in fields:
-                    if field not in item._meta.fields_map.keys():
+                    if field not in item._meta._forward_fields_map.keys():
                         raise AttributeError('Mocked model %s has no field %s' % (item, field))
                     item_dict[field] = getattr(item, field)
                 result.append(item_dict)
@@ -253,7 +253,7 @@ def MockSet(*initial_items, **kwargs):
 def MockModel(cls=None, mock_name=None, spec_set=None, **attrs):
     mock_attrs = dict(spec=cls, name=mock_name, spec_set=spec_set)
 
-    _meta = type('_meta', (object,), dict(_forward_fields_map={}, fields_map=attrs, parents={}))
+    _meta = type('_meta', (object,), dict(_forward_fields_map=attrs, fields_map={}, parents={}))
 
     mock_model = MagicMock(**mock_attrs)
 
