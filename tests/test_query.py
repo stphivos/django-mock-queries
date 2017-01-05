@@ -519,7 +519,7 @@ class TestQuery(TestCase):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
         self.assertRaises(TypeError, qs.values_list, 'foo', 'bar', flat=True)
 
-    def test_query_values_list_raises_attribute_error_when_field_is_not_in_forward_fields_map(self):
+    def test_query_values_list_raises_attribute_error_when_field_is_not_in_meta_concrete_fields(self):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
         self.assertRaises(AttributeError, qs.values_list, 'bar')
 
@@ -543,7 +543,7 @@ class TestQuery(TestCase):
         assert results_with_fields[0] == (1, 3)
         assert results_with_fields[1] == (2, 4)
 
-    def test_query_values_raises_attribute_error_when_field_is_not_in_forward_fields_map(self):
+    def test_query_values_raises_attribute_error_when_field_is_not_in_meta_concrete_fields(self):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
         self.assertRaises(AttributeError, qs.values, 'bar')
 
