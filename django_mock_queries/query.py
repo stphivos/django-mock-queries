@@ -31,20 +31,7 @@ def MockSet(*initial_items, **kwargs):
         'select_for_update'
     ])
     mock_set.cls = clone.cls if clone else kwargs.get('cls', empty_func)
-    mock_set.flat = clone.flat if clone else None
-    mock_set.projection = clone.projection if clone else None
     mock_set.count = MagicMock(side_effect=lambda: len(items))
-
-    def project(index, source_items=None):
-        target_items = source_items or items
-        if not mock_set.projection:
-            return target_items[index]
-        elif mock_set.flat:
-            return getattr(target_items[index], mock_set.projection[0])
-        else:
-            return tuple([getattr(target_items[index], x) for x in mock_set.projection])
-
-    mock_set.project = MagicMock(side_effect=project)
 
     def add(*model):
         items.extend(model)
@@ -105,7 +92,7 @@ def MockSet(*initial_items, **kwargs):
     mock_set.exists = MagicMock(side_effect=exists)
 
     def get_item(x):
-        return project(x)
+        return items[x]
 
     mock_set.__getitem__ = MagicMock(side_effect=get_item)
 
@@ -153,7 +140,7 @@ def MockSet(*initial_items, **kwargs):
         results = sorted(items, key=attrgetter(field), reverse=True)
         if len(results) == 0:
             raise ObjectDoesNotExist()
-        return project(0, source_items=results)
+        return results[0]
 
     mock_set.latest = MagicMock(side_effect=latest)
 
@@ -161,7 +148,7 @@ def MockSet(*initial_items, **kwargs):
         results = sorted(items, key=attrgetter(field))
         if len(results) == 0:
             raise ObjectDoesNotExist()
-        return project(0, source_items=results)
+        return results[0]
 
     mock_set.earliest = MagicMock(side_effect=earliest)
 
@@ -177,7 +164,7 @@ def MockSet(*initial_items, **kwargs):
     mock_set.last = MagicMock(side_effect=last)
 
     def __iter__():
-        return iter([project(i) for i, v in enumerate(items)])
+        return iter([items[i] for i, v in enumerate(items)])
 
     mock_set.__iter__ = MagicMock(side_effect=__iter__)
 
@@ -198,7 +185,7 @@ def MockSet(*initial_items, **kwargs):
         elif results.count() > 1:
             raise MultipleObjectsReturned()
         else:
-            return project(0, source_items=results)
+            return results[0]
 
     mock_set.get = MagicMock(side_effect=get)
 
@@ -209,7 +196,7 @@ def MockSet(*initial_items, **kwargs):
         elif results.count() > 1:
             raise MultipleObjectsReturned()
         else:
-            return project(0, source_items=results), False
+            return results[0], False
 
     mock_set.get_or_create = MagicMock(side_effect=get_or_create)
 
@@ -220,19 +207,54 @@ def MockSet(*initial_items, **kwargs):
             raise TypeError('Unexpected keyword arguments to values_list: %s' % (list(kwargs),))
         if flat and len(fields) > 1:
             raise TypeError('`flat` is not valid when values_list is called with more than one field.')
+        if len(fields) == 0:
+            raise NotImplementedError('values_list() with no arguments is not implemented')
 
-        mock_set.flat = flat
-        mock_set.projection = fields
+        result = []
+        if fields:
+            for item in items:
+                a = list()
+                for field in fields:
+                    if field not in item._meta._forward_fields_map.keys():
+                        raise AttributeError('Mocked model %s has no field %s' % (item, field))
+                    a.append(getattr(item, field))
+                if flat:
+                    result.append(a[0])
+                else:
+                    result.append(tuple(a))
 
-        return MockSet(*items, clone=mock_set)
+        return MockSet(*result, clone=mock_set)
 
     mock_set.values_list = MagicMock(side_effect=values_list)
+
+    def values(*fields):
+        result = []
+        for item in items:
+            if len(fields) == 0:
+                item_dict = {}
+                for field in item._meta._forward_fields_map.keys():
+                    item_dict[field] = getattr(item, field)
+                result.append(item_dict)
+            else:
+                item_dict = {}
+                for field in fields:
+                    if field not in item._meta._forward_fields_map.keys():
+                        raise AttributeError('Mocked model %s has no field %s' % (item, field))
+                    item_dict[field] = getattr(item, field)
+                result.append(item_dict)
+
+        return MockSet(*result, clone=mock_set)
+
+    mock_set.values = MagicMock(side_effect=values)
 
     return mock_set
 
 
 def MockModel(cls=None, mock_name=None, spec_set=None, **attrs):
     mock_attrs = dict(spec=cls, name=mock_name, spec_set=spec_set)
+
+    _meta = type('_meta', (object,), dict(_forward_fields_map=attrs, fields_map={}, parents={}))
+
     mock_model = MagicMock(**mock_attrs)
 
     if mock_name:
@@ -240,6 +262,8 @@ def MockModel(cls=None, mock_name=None, spec_set=None, **attrs):
 
     for key, value in attrs.items():
         setattr(type(mock_model), key, PropertyMock(return_value=value))
+
+    setattr(type(mock_model), '_meta', PropertyMock(return_value=_meta))
 
     return mock_model
 
