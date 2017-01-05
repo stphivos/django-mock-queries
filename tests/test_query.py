@@ -18,35 +18,6 @@ class TestQuery(TestCase):
         items = [1, 2, 3]
         assert MockSet(*items).count() == len(items)
 
-    def test_query_project_returns_whole_item_by_index(self):
-        item_1 = MockModel(foo=1)
-        item_2 = MockModel(foo=2)
-
-        qs = MockSet(item_1, item_2)
-        assert qs.project(1) == item_2
-
-    def test_query_project_returns_item_flat_attribute(self):
-        item_1 = MockModel(foo=1)
-        item_2 = MockModel(foo=2)
-
-        qs = MockSet(item_1, item_2)
-        qs.flat = True
-        qs.projection = ['foo']
-
-        assert qs.project(1) == item_2.foo
-
-    def test_query_project_returns_item_specified_attributes_tuple(self):
-        item_1 = MockModel(foo=1, bar='a')
-        item_2 = MockModel(foo=2, bar='b')
-
-        qs = MockSet(item_1, item_2)
-        qs.flat = False
-        qs.projection = ['foo', 'bar']
-
-        attrs = qs.project(1)
-        assert attrs[0] == item_2.foo
-        assert attrs[1] == item_2.bar
-
     def test_query_adds_items_to_set(self):
         items = [1, 2, 3]
         self.mock_set.add(*items)
@@ -548,13 +519,51 @@ class TestQuery(TestCase):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
         self.assertRaises(TypeError, qs.values_list, 'foo', 'bar', flat=True)
 
-    def test_query_values_list_returns_qs_clone_with_flat_and_projection_fields_set(self):
-        item_1 = MockModel(foo=1)
-        item_2 = MockModel(foo=2)
+    def test_query_values_list_raises_attribute_error_when_field_is_not_in_meta_concrete_fields(self):
+        qs = MockSet(MockModel(foo=1), MockModel(foo=2))
+        self.assertRaises(AttributeError, qs.values_list, 'bar')
+
+    def test_query_values_list_raises_not_implemented_if_no_fields_specified(self):
+        qs = MockSet(MockModel(foo=1), MockModel(foo=2))
+        self.assertRaises(NotImplementedError, qs.values_list)
+
+    def test_query_values_list(self):
+        item_1 = MockModel(foo=1, bar=3)
+        item_2 = MockModel(foo=2, bar=4)
 
         qs = MockSet(item_1, item_2)
-        projection = ('foo',)
-        obj = qs.values_list(*projection, flat=True)
+        results_flat = qs.values_list('foo', flat=True)
+        results_single_fields = qs.values_list('foo')
+        results_with_fields = qs.values_list('foo', 'bar')
 
-        assert obj.flat is True
-        assert obj.projection == projection
+        assert results_flat[0] == 1
+        assert results_flat[1] == 2
+        assert results_single_fields[0] == (1,)
+        assert results_single_fields[1] == (2,)
+        assert results_with_fields[0] == (1, 3)
+        assert results_with_fields[1] == (2, 4)
+
+    def test_query_values_raises_attribute_error_when_field_is_not_in_meta_concrete_fields(self):
+        qs = MockSet(MockModel(foo=1), MockModel(foo=2))
+        self.assertRaises(AttributeError, qs.values, 'bar')
+
+    def test_query_values(self):
+        item_1 = MockModel(foo=1, bar=3, foobar=5)
+        item_2 = MockModel(foo=2, bar=4, foobar=6)
+
+        qs = MockSet(item_1, item_2)
+
+        results_all = qs.values()
+        results_with_fields = qs.values('foo', 'bar')
+
+        assert results_all[0]['foo'] == 1
+        assert results_all[0]['bar'] == 3
+        assert results_all[0]['foobar'] == 5
+        assert results_all[1]['foo'] == 2
+        assert results_all[1]['bar'] == 4
+        assert results_all[1]['foobar'] == 6
+
+        assert results_with_fields[0]['foo'] == 1
+        assert results_with_fields[0]['bar'] == 3
+        assert results_with_fields[1]['foo'] == 2
+        assert results_with_fields[1]['bar'] == 4
