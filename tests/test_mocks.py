@@ -1,11 +1,11 @@
 from django.db import connection
 from django.db.utils import NotSupportedError
 from django.db.backends.base.creation import BaseDatabaseCreation
-from django_mock_queries.mocks import monkey_patch_test_db, mock_django_connection
 from mock import patch
 from unittest import TestCase
 
 from django_mock_queries import mocks
+from django_mock_queries.mocks import monkey_patch_test_db, mock_django_connection, ModelMocker
 from tests.mock_models import Car
 
 
@@ -46,3 +46,32 @@ class TestMocks(TestCase):
 
         self.assertTrue(is_foo_before)
         self.assertFalse(is_foo_after)
+
+    def test_generic_model_mocker(self):
+        with ModelMocker(Car):
+            # New instance gets inserted
+            obj = Car(speed=4)
+            obj.save()
+            self.assertEqual(Car.objects.get(pk=obj.id), obj)
+
+            # Existing instance gets updated
+            obj = Car(id=obj.id, speed=5)
+            obj.save()
+            self.assertEqual(Car.objects.get(pk=obj.id).speed, obj.speed)
+
+            # Trying to update an instance that doesn't exists creates it
+            obj = Car(id=123, speed=5)
+            obj.save()
+            self.assertEqual(Car.objects.get(pk=obj.id), obj)
+
+    def test_custom_model_mocker(self):
+        class CarModelMocker(ModelMocker):
+            def validate_price(self):
+                """ The real implementation would call an external service that
+                we would like to skip but verify it's called before save. """
+
+        with CarModelMocker(Car, 'validate_price') as mocker:
+            obj = Car()
+            obj.save()
+
+            mocker.method('validate_price').assert_called_with()
