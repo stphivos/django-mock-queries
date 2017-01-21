@@ -64,14 +64,21 @@ class TestMocks(TestCase):
             obj.save()
             self.assertEqual(Car.objects.get(pk=obj.id), obj)
 
-    def test_custom_model_mocker(self):
-        class CarModelMocker(ModelMocker):
-            def validate_price(self):
-                """ The real implementation would call an external service that
-                we would like to skip but verify it's called before save. """
+    class CarModelMocker(ModelMocker):
+        def validate_price(self):
+            """ The real implementation would call an external service that
+            we would like to skip but verify it's called before save. """
 
-        with CarModelMocker(Car, 'validate_price') as mocker:
+    def test_custom_model_mocker(self):
+        with self.CarModelMocker(Car, 'validate_price') as mocker:
             obj = Car()
             obj.save()
 
             mocker.method('validate_price').assert_called_with()
+
+    @CarModelMocker(Car, 'validate_price')
+    def test_custom_model_mocker_callable(self, mocker):
+        obj = Car()
+        obj.save()
+
+        mocker.method('validate_price').assert_called_with()

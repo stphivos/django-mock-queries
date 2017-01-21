@@ -120,6 +120,13 @@ class Mocker(object):
 
         return self
 
+    def __call__(self, func):
+        def decorated(*args, **kwargs):
+            with self:
+                return func(*((args[0], self) + args[1:]), **kwargs)
+
+        return decorated
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         for patcher in self.patchers.values():
             patcher.stop()
