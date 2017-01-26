@@ -1,12 +1,17 @@
+import sys
 from django.db import connection
 from django.db.utils import NotSupportedError
 from django.db.backends.base.creation import BaseDatabaseCreation
-from mock import patch
+from mock import patch, MagicMock, PropertyMock
 from unittest import TestCase
 
 from django_mock_queries import mocks
-from django_mock_queries.mocks import monkey_patch_test_db, mock_django_connection, ModelMocker
-from tests.mock_models import Car
+from django_mock_queries.mocks import monkey_patch_test_db, mock_django_connection \
+    MockOneToOneMap, MockOneToManyMap, PatcherChain, mocked_relations, ModelMocker
+from django_mock_queries.query import MockSet
+from tests.mock_models import Car, Sedan, Manufacturer
+
+BUILTINS = 'builtins' if sys.version_info[0] >= 3 else '__builtin__'
 
 
 class TestMocks(TestCase):
@@ -47,6 +52,287 @@ class TestMocks(TestCase):
         self.assertTrue(is_foo_before)
         self.assertFalse(is_foo_after)
 
+
+# noinspection PyUnresolvedReferences,PyStatementEffect
+class MockOneToOneTests(TestCase):
+    def test_not_mocked(self):
+        car = Car(id=99)
+
+        with self.assertRaises(NotSupportedError):
+            car.sedan
+
+    @patch.object(Car, 'sedan', MockOneToOneMap(Car.sedan))
+    def test_not_set(self):
+        car = Car(id=99)
+
+        with self.assertRaises(Car.sedan.RelatedObjectDoesNotExist):
+            car.sedan
+
+    @patch.object(Car, 'sedan', MockOneToOneMap(Car.sedan))
+    def test_set(self):
+        car = Car()
+        sedan = Sedan()
+        car.sedan = sedan
+
+        self.assertIs(car.sedan, sedan)
+
+    @patch.object(Car, 'sedan', MockOneToOneMap(Car.sedan))
+    def test_set_on_individual_object(self):
+        car = Car()
+        car2 = Car()
+        car.sedan = Sedan()
+
+        with self.assertRaises(Car.sedan.RelatedObjectDoesNotExist):
+            car2.sedan
+
+    @patch.object(Car, 'sedan', MockOneToOneMap(Car.sedan))
+    def test_delegation(self):
+        self.assertEqual(Car.sedan.cache_name, '_sedan_cache')
+
+
+# noinspection PyUnresolvedReferences,PyStatementEffect
+class MockOneToManyTests(TestCase):
+    def test_not_mocked(self):
+        m = Manufacturer()
+
+        with self.assertRaisesRegexp(
+                NotSupportedError,
+                'Mock database tried to execute SQL for Car model'):
+            m.car_set.count()
+
+    def test_mock_is_removed(self):
+        m = Manufacturer()
+
+        with patch.object(Manufacturer, 'car_set', MockOneToManyMap(Manufacturer.car_set)):
+            m.car_set = MockSet(Car(speed=95))
+            self.assertEqual(1, m.car_set.count())
+
+        with self.assertRaisesRegexp(
+                NotSupportedError,
+                'Mock database tried to execute SQL for Car model'):
+            m.car_set.count()
+
+    @patch.object(Manufacturer, 'car_set', MockOneToManyMap(Manufacturer.car_set))
+    def test_not_set(self):
+        m = Manufacturer()
+
+        self.assertEqual(0, m.car_set.count())
+
+    @patch.object(Manufacturer, 'car_set', MockOneToManyMap(Manufacturer.car_set))
+    def test_set(self):
+        m = Manufacturer()
+        car = Car(speed=95)
+        m.car_set.add(car)
+
+        self.assertIs(m.car_set.first(), car)
+
+    @patch.object(Manufacturer, 'car_set', MockOneToManyMap(Manufacturer.car_set))
+    def test_set_on_individual_object(self):
+        m = Manufacturer()
+        m.car_set.add(Car(speed=95))
+        m2 = Manufacturer()
+
+        self.assertEqual(0, m2.car_set.count())
+
+    @patch.object(Manufacturer, 'car_set', MockOneToManyMap(Manufacturer.car_set))
+    def test_set_explicit_collection(self):
+        m = Manufacturer()
+        m.car_set.add(Car(speed=95))
+
+        car = Car(speed=100)
+        m.car_set = MockSet(car)
+
+        self.assertIs(m.car_set.first(), car)
+
+    @patch.object(Manufacturer, 'car_set', MockOneToManyMap(Manufacturer.car_set))
+    @patch.object(Car, 'save', MagicMock)
+    def test_create(self):
+        m = Manufacturer()
+        car = m.car_set.create(speed=95)
+
+        self.assertIsInstance(car, Car)
+        self.assertEqual(95, car.speed)
+
+    @patch.object(Manufacturer, 'car_set', MockOneToManyMap(Manufacturer.car_set))
+    def test_delegation(self):
+        """ We can still access fields from the original relation manager. """
+        self.assertTrue(Manufacturer.car_set.related_manager_cls.do_not_call_in_templates)
+
+
+# noinspection PyUnusedLocal
+def zero_sum(items):
+    return 0
+
+
+class PatcherChainTest(TestCase):
+    patch_mock_max = patch(BUILTINS + '.max')
+    patch_zero_sum = patch(BUILTINS + '.sum', zero_sum)
+
+    @patch_zero_sum
+    def test_patch_dummy(self):
+        sum_result = sum([1, 2, 3])
+
+        self.assertEqual(0, sum_result)
+
+    @patch_mock_max
+    def test_patch_mock(self, mock_max):
+        mock_max.return_value = 42
+        max_result = max([1, 2, 3])
+
+        self.assertEqual(42, max_result)
+
+    @PatcherChain([patch_zero_sum, patch_mock_max])
+    def test_patch_both(self, mock_max):
+        sum_result = sum([1, 2, 3])
+        mock_max.return_value = 42
+        max_result = max([1, 2, 3])
+
+        self.assertEqual(0, sum_result)
+        self.assertEqual(42, max_result)
+
+    @PatcherChain([patch_mock_max, patch_zero_sum])
+    def test_patch_both_reversed(self, mock_max):
+        sum_result = sum([1, 2, 3])
+        mock_max.return_value = 42
+        max_result = max([1, 2, 3])
+
+        self.assertEqual(0, sum_result)
+        self.assertEqual(42, max_result)
+
+    @PatcherChain([patch_mock_max], pass_mocks=False)
+    def test_mocks_not_passed(self):
+        """ Create a new mock, but don't pass it to the test method. """
+
+    def test_context_manager(self):
+        with PatcherChain([PatcherChainTest.patch_mock_max,
+                           PatcherChainTest.patch_zero_sum]) as mocked:
+            sum_result = sum([1, 2, 3])
+            mocked[0].return_value = 42
+            max_result = max([1, 2, 3])
+
+            self.assertEqual(0, sum_result)
+            self.assertEqual(42, max_result)
+            self.assertEqual(2, len(mocked))
+            self.assertIs(zero_sum, mocked[1])
+
+    def test_start(self):
+        patcher = PatcherChain([PatcherChainTest.patch_mock_max,
+                                PatcherChainTest.patch_zero_sum])
+        mocked = patcher.start()
+        self.addCleanup(patcher.stop)
+
+        sum_result = sum([1, 2, 3])
+        mocked[0].return_value = 42
+        max_result = max([1, 2, 3])
+
+        self.assertEqual(0, sum_result)
+        self.assertEqual(42, max_result)
+        self.assertEqual(2, len(mocked))
+        self.assertIs(zero_sum, mocked[1])
+
+
+@PatcherChain([patch(BUILTINS + '.max'), patch(BUILTINS + '.sum', zero_sum)],
+              pass_mocks=False)
+class PatcherChainOnClassTest(TestCase):
+    test_example_attribute = 42
+
+    def test_patch_dummy(self):
+        sum_result = sum([1, 2, 3])
+
+        self.assertEqual(0, sum_result)
+
+    def test_patch_mock(self):
+        max_result = max([1, 2, 3])
+
+        self.assertIsInstance(max_result, MagicMock)
+
+    def test_patch_both(self):
+        sum_result = sum([1, 2, 3])
+        max_result = max([1, 2, 3])
+
+        self.assertEqual(0, sum_result)
+        self.assertIsInstance(max_result, MagicMock)
+
+    def test_attribute(self):
+        self.assertEqual(42, PatcherChainOnClassTest.test_example_attribute)
+
+
+class MockedRelationsTest(TestCase):
+    @mocked_relations(Manufacturer)
+    def test_decorator(self):
+        m = Manufacturer()
+
+        self.assertEqual(0, m.car_set.count())
+        m.car_set.add(Car())
+        self.assertEqual(1, m.car_set.count())
+
+    def test_context_manager(self):
+        m = Manufacturer()
+
+        with mocked_relations(Manufacturer):
+            self.assertEqual(0, m.car_set.count())
+            m.car_set.add(Car())
+            self.assertEqual(1, m.car_set.count())
+
+    def test_reusing_patcher(self):
+        patcher = mocked_relations(Manufacturer)
+        with patcher:
+            self.assertEqual(0, Manufacturer.objects.count())
+            Manufacturer.objects.add(Manufacturer())
+            self.assertEqual(1, Manufacturer.objects.count())
+
+        with patcher:
+            self.assertEqual(0, Manufacturer.objects.count())
+            Manufacturer.objects.add(Manufacturer())
+            self.assertEqual(1, Manufacturer.objects.count())
+
+    @mocked_relations(Manufacturer)
+    def test_relation_with_garbage_collection(self):
+        self.longMessage = True
+        for group_index in range(10):
+            m = Manufacturer()
+            self.assertEqual(0,
+                             m.car_set.count(),
+                             'group_index: {}'.format(group_index))
+            m.car_set.add(Car())
+            self.assertEqual(1, m.car_set.count())
+            del m
+
+    def test_replaces_other_mocks(self):
+        original_type = type(Manufacturer.car_set)
+        self.assertIsInstance(Manufacturer.car_set, original_type)
+
+        with mocked_relations(Manufacturer):
+            Manufacturer.car_set = PropertyMock('Manufacturer.car_set')
+
+        self.assertIsInstance(Manufacturer.car_set, original_type)
+
+    @mocked_relations(Sedan)
+    def test_parent(self):
+        sedan = Sedan(speed=95)
+
+        self.assertEqual(0, sedan.passengers.count())
+
+    @mocked_relations(Sedan)
+    def test_mock_twice(self):
+        """ Don't reset the mocking if a class is mocked twice.
+
+        Could happen where Sedan is mocked on the class, and Car (the base
+        class) is mocked on a method.
+        """
+        Car.objects.add(Car(speed=95))
+        self.assertEqual(1, Car.objects.count())
+
+        with mocked_relations(Car):
+            self.assertEqual(1, Car.objects.count())
+
+
+class TestMockers(TestCase):
+    class CarModelMocker(ModelMocker):
+        def validate_price(self):
+            """ The real implementation would call an external service that
+            we would like to skip but verify it's called before save. """
+
     def test_generic_model_mocker(self):
         with ModelMocker(Car):
             # New instance gets inserted
@@ -63,11 +349,6 @@ class TestMocks(TestCase):
             obj = Car(id=123, speed=5)
             obj.save()
             self.assertEqual(Car.objects.get(pk=obj.id), obj)
-
-    class CarModelMocker(ModelMocker):
-        def validate_price(self):
-            """ The real implementation would call an external service that
-            we would like to skip but verify it's called before save. """
 
     def test_custom_model_mocker(self):
         with self.CarModelMocker(Car, 'validate_price') as mocker:

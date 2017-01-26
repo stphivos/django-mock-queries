@@ -32,6 +32,11 @@ class Sedan(Car):
     pass
 
 
+class Passenger(models.Model):
+    car = models.ForeignKey(Car, related_name='passengers')
+    name = models.CharField(max_length=25)
+
+
 class CarSerializer(serializers.ModelSerializer):
     make = ManufacturerSerializer()
     speed = serializers.SerializerMethodField()
