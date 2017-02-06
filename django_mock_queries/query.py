@@ -136,10 +136,14 @@ def MockSet(*initial_items, **kwargs):
 
     mock_set.distinct = MagicMock(side_effect=distinct)
 
+    def raise_does_not_exist():
+        does_not_exist = getattr(mock_set.cls, 'DoesNotExist', ObjectDoesNotExist)
+        raise does_not_exist()
+
     def latest(field):
         results = sorted(items, key=attrgetter(field), reverse=True)
         if len(results) == 0:
-            raise ObjectDoesNotExist()
+            raise_does_not_exist()
         return results[0]
 
     mock_set.latest = MagicMock(side_effect=latest)
@@ -147,7 +151,7 @@ def MockSet(*initial_items, **kwargs):
     def earliest(field):
         results = sorted(items, key=attrgetter(field))
         if len(results) == 0:
-            raise ObjectDoesNotExist()
+            raise_does_not_exist()
         return results[0]
 
     mock_set.earliest = MagicMock(side_effect=earliest)
@@ -181,7 +185,7 @@ def MockSet(*initial_items, **kwargs):
     def get(**attrs):
         results = filter(**attrs)
         if not results.exists():
-            raise ObjectDoesNotExist()
+            raise_does_not_exist()
         elif results.count() > 1:
             raise MultipleObjectsReturned()
         else:
