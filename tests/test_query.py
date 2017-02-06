@@ -7,7 +7,7 @@ from django.db.models import Q
 from django_mock_queries.constants import *
 from django_mock_queries.exceptions import ModelNotSpecified, ArgumentNotSupported
 from django_mock_queries.query import MockSet, MockModel
-from tests.mock_models import Car, Sedan
+from tests.mock_models import Car, Sedan, Manufacturer
 
 
 class TestQuery(TestCase):
@@ -85,6 +85,16 @@ class TestQuery(TestCase):
 
         self.mock_set.add(item_1, item_2, item_3)
         results = list(self.mock_set.filter(speed=3))
+
+        assert results == [item_3]
+
+    def test_query_filters_related_model_objects(self):
+        item_1 = Car(make=Manufacturer(name='apple'))
+        item_2 = Car(make=Manufacturer(name='banana'))
+        item_3 = Car(make=Manufacturer(name='cherry'))
+
+        self.mock_set.add(item_1, item_2, item_3)
+        results = list(self.mock_set.filter(make__name='cherry'))
 
         assert results == [item_3]
 
@@ -377,7 +387,7 @@ class TestQuery(TestCase):
 
     def test_query_latest_raises_error_exist_when_empty_set(self):
         self.mock_set.clear()
-        self.assertRaises(Exception, self.mock_set.latest, 'foo')
+        self.assertRaises(ObjectDoesNotExist, self.mock_set.latest, 'foo')
 
     def test_query_earliest_returns_the_first_element_from_ordered_set(self):
         item_1 = MockModel(foo=1)
@@ -391,7 +401,7 @@ class TestQuery(TestCase):
 
     def test_query_earliest_raises_error_exist_when_empty_set(self):
         self.mock_set.clear()
-        self.assertRaises(Exception, self.mock_set.earliest, 'foo')
+        self.assertRaises(ObjectDoesNotExist, self.mock_set.earliest, 'foo')
 
     def test_query_order_by(self):
         item_1 = MockModel(foo=1, bar='a', mock_name='item_1')
@@ -460,7 +470,24 @@ class TestQuery(TestCase):
         item_3 = MockModel(foo=3)
 
         self.mock_set.add(item_1, item_2, item_3)
-        self.assertRaises(Exception, self.mock_set.get, foo=4)
+        self.assertRaises(ObjectDoesNotExist, self.mock_set.get, foo=4)
+
+    def test_query_get_raises_specific_exception(self):
+        item_1 = Car(model='battle')
+        item_2 = Car(model='pious')
+        item_3 = Car(model='hummus')
+
+        self.mock_set = MockSet(item_1, item_2, item_3, cls=Car)
+        self.assertRaises(Car.DoesNotExist, self.mock_set.get, model='clowncar')
+
+    def test_filter_keeps_class(self):
+        item_1 = Car(model='battle')
+        item_2 = Car(model='pious')
+        item_3 = Car(model='hummus')
+
+        self.mock_set = MockSet(item_1, item_2, item_3, cls=Car)
+        filtered = self.mock_set.filter(model__endswith='s')
+        self.assertRaises(Car.DoesNotExist, filtered.get, model='clowncar')
 
     def test_query_get_raises_does_multiple_objects_returned_when_more_than_one_match(self):
         item_1 = MockModel(foo=1)
@@ -468,7 +495,7 @@ class TestQuery(TestCase):
         item_3 = MockModel(foo=2)
 
         self.mock_set.add(item_1, item_2, item_3)
-        self.assertRaises(Exception, self.mock_set.get, foo=1)
+        self.assertRaises(MultipleObjectsReturned, self.mock_set.get, foo=1)
 
     def test_query_get_or_create_gets_existing_unique_match(self):
         item_1 = MockModel(foo=1)
@@ -487,7 +514,7 @@ class TestQuery(TestCase):
         item_3 = MockModel(foo=2)
 
         self.mock_set.add(item_1, item_2, item_3)
-        self.assertRaises(Exception, self.mock_set.get_or_create, foo=1)
+        self.assertRaises(MultipleObjectsReturned, self.mock_set.get_or_create, foo=1)
 
     def test_query_get_or_create_creates_new_model_when_no_match(self):
         item_1 = MockModel(foo=1)

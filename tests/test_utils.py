@@ -110,6 +110,34 @@ class TestUtils(TestCase):
         result = utils.is_match('abc', 'a', constants.COMPARISON_ICONTAINS)
         assert result is True
 
+    def test_is_match_startswith_check(self):
+        result = utils.is_match('abc', 'a', constants.COMPARISON_STARTSWITH)
+        assert result is True
+
+        result = utils.is_match('abc', 'A', constants.COMPARISON_STARTSWITH)
+        assert result is False
+
+    def test_is_match_istartswith_check(self):
+        result = utils.is_match('abc', 'a', constants.COMPARISON_ISTARTSWITH)
+        assert result is True
+
+        result = utils.is_match('abc', 'A', constants.COMPARISON_ISTARTSWITH)
+        assert result is True
+
+    def test_is_match_endswith_check(self):
+        result = utils.is_match('abc', 'c', constants.COMPARISON_ENDSWITH)
+        assert result is True
+
+        result = utils.is_match('abc', 'C', constants.COMPARISON_ENDSWITH)
+        assert result is False
+
+    def test_is_match_iendswith_check(self):
+        result = utils.is_match('abc', 'c', constants.COMPARISON_IENDSWITH)
+        assert result is True
+
+        result = utils.is_match('abc', 'C', constants.COMPARISON_IENDSWITH)
+        assert result is True
+
     def test_is_match_greater_than_value_check(self):
         result = utils.is_match(5, 3, constants.COMPARISON_GT)
         assert result is True
