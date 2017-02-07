@@ -1,14 +1,14 @@
+import sys
 from django.db import connection
 from django.db.utils import NotSupportedError
 from django.db.backends.base.creation import BaseDatabaseCreation
-from django_mock_queries.mocks import monkey_patch_test_db, \
-    mock_django_connection, MockOneToOneMap, MockOneToManyMap, PatcherChain, mocked_relations
-from django_mock_queries.query import MockSet
 from mock import patch, MagicMock, PropertyMock
 from unittest import TestCase
-import sys
 
 from django_mock_queries import mocks
+from django_mock_queries.mocks import monkey_patch_test_db, mock_django_connection, \
+    MockOneToOneMap, MockOneToManyMap, PatcherChain, mocked_relations, ModelMocker
+from django_mock_queries.query import MockSet
 from tests.mock_models import Car, Sedan, Manufacturer
 
 BUILTINS = 'builtins' if sys.version_info[0] >= 3 else '__builtin__'
@@ -338,3 +338,41 @@ class MockedRelationsTest(TestCase):
     def test_raises_specific_error(self):
         with self.assertRaises(Manufacturer.DoesNotExist):
             Manufacturer.objects.get(name='sam')
+
+
+class TestMockers(TestCase):
+    class CarModelMocker(ModelMocker):
+        def validate_price(self):
+            """ The real implementation would call an external service that
+            we would like to skip but verify it's called before save. """
+
+    def test_model_mocker_generic(self):
+        with ModelMocker(Car):
+            # New instance gets inserted
+            obj = Car(speed=4)
+            obj.save()
+            self.assertEqual(Car.objects.get(pk=obj.id), obj)
+
+            # Existing instance gets updated
+            obj = Car(id=obj.id, speed=5)
+            obj.save()
+            self.assertEqual(Car.objects.get(pk=obj.id).speed, obj.speed)
+
+            # Trying to update an instance that doesn't exists creates it
+            obj = Car(id=123, speed=5)
+            obj.save()
+            self.assertEqual(Car.objects.get(pk=obj.id), obj)
+
+    def test_model_mocker_with_custom_method(self):
+        with self.CarModelMocker(Car, 'validate_price') as mocker:
+            obj = Car()
+            obj.save()
+
+            mocker.method('validate_price').assert_called_with()
+
+    @CarModelMocker(Car, 'validate_price')
+    def test_model_mocker_callable_with_custom_method(self, mocker):
+        obj = Car()
+        obj.save()
+
+        mocker.method('validate_price').assert_called_with()

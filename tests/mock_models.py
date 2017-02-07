@@ -20,6 +20,13 @@ class Car(models.Model):
     def format_speed(self):
         return '{0} km/h'.format(self.speed)
 
+    def validate_price(self):
+        """ Validate price against manufacturer remote api """
+
+    def save(self, *args, **kwargs):
+        self.validate_price()
+        super(Car, self).save(*args, **kwargs)
+
 
 class Sedan(Car):
     pass

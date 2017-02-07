@@ -1,16 +1,15 @@
-from mock import Mock, MagicMock, patch
-from functools import partial
-from itertools import chain
 import os
 import sys
-import weakref
-
 import django
+import weakref
 from django.apps import apps
 from django.db import connections
 from django.db.backends.base import creation
 from django.db.models import Model
 from django.db.utils import ConnectionHandler, NotSupportedError
+from functools import partial
+from itertools import chain
+from mock import Mock, MagicMock, patch, PropertyMock
 
 from .query import MockSet
 
@@ -244,6 +243,7 @@ class PatcherChain(object):
     As a test method decorator, a test class decorator, a context manager,
     or by just calling start() and stop().
     """
+
     def __init__(self, patchers, pass_mocks=True):
         """ Initialize a patcher.
 
@@ -303,3 +303,92 @@ class PatcherChain(object):
     def stop(self):
         for patcher in reversed(self.patchers):
             patcher.stop()
+
+
+class Mocker(object):
+    """
+    A decorator that patches multiple class methods with a magic mock instance that does nothing.
+    """
+
+    def __init__(self, cls, *methods):
+        self.cls = cls
+        self.methods = methods
+
+    def __enter__(self):
+        self.mocks = {}
+        self.patchers = {}
+
+        for method in self.methods:
+            replacement_method = '_'.join(method.split('.'))
+            target_cls, target_method = self.get_target_method(self.cls, method)
+            mock_cls = MagicMock if callable(getattr(target_cls, target_method)) else PropertyMock
+
+            patcher = patch.object(target_cls, target_method, mock_cls(
+                name='{}.{}'.format(target_cls, method),
+                side_effect=getattr(self, replacement_method, MagicMock())
+            ))
+
+            self.patchers[method] = patcher
+            self.mocks[method] = patcher.start()
+
+        return self
+
+    def __call__(self, func):
+        def decorated(*args, **kwargs):
+            with self:
+                return func(*((args[0], self) + args[1:]), **kwargs)
+
+        return decorated
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for patcher in self.patchers.values():
+            patcher.stop()
+
+    def method(self, name):
+        return self.mocks[name]
+
+    def get_target_method(self, cls, method):
+        target_obj = cls
+        parts = method.split('.')
+
+        target_method = parts[-1]
+        parts = parts[:-1]
+
+        while parts:
+            target_obj = getattr(target_obj, parts[0], None) or getattr(target_obj.model, '_' + parts[0])
+            parts.pop(0)
+
+        return target_obj, target_method
+
+
+class ModelMocker(Mocker):
+    """
+    A decorator that patches django base model's db read/write methods and wires them to a MockSet.
+    """
+
+    default_methods = ('objects', '_meta.base_manager._insert', '_do_update')
+
+    def __init__(self, cls, *methods):
+        super(ModelMocker, self).__init__(cls, *(self.default_methods + methods))
+        self.qs = MockSet()
+
+    def objects(self):
+        return self.qs
+
+    def _meta_base_manager__insert(self, objects, *args, **kwargs):
+        obj = objects[0]
+
+        obj.pk = max([x.pk for x in self.qs] + [0]) + 1
+        self.qs.add(obj)
+
+        return obj.pk
+
+    def _do_update(self, base_qs, using, pk_val, values, *args, **kwargs):
+        if not self.qs.filter(pk=pk_val).exists():
+            return False
+
+        for field, _, value in values:
+            if not (value is None and not field.null):
+                setattr(self.qs.get(pk=pk_val), field.name, value)
+
+        return True
