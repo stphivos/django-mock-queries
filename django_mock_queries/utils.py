@@ -59,6 +59,10 @@ def is_match(first, second, comparison=None):
         COMPARISON_LT: lambda: first < second,
         COMPARISON_LTE: lambda: first <= second,
         COMPARISON_IN: lambda: first in second,
+        COMPARISON_STARTSWITH: lambda: first.startswith(second),
+        COMPARISON_ISTARTSWITH: lambda: first.lower().startswith(second.lower()),
+        COMPARISON_ENDSWITH: lambda: first.endswith(second),
+        COMPARISON_IENDSWITH: lambda: first.lower().endswith(second.lower()),
         COMPARISON_ISNULL: lambda: (first is None) == bool(second),
     }[comparison]()
 

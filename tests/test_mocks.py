@@ -158,6 +158,14 @@ class MockOneToManyTests(TestCase):
         """ We can still access fields from the original relation manager. """
         self.assertTrue(Manufacturer.car_set.related_manager_cls.do_not_call_in_templates)
 
+    @patch.object(Manufacturer, 'car_set', MockOneToManyMap(Manufacturer.car_set))
+    def test_raises(self):
+        """ Raises an error specific to the child class. """
+        m = Manufacturer()
+
+        with self.assertRaises(Car.DoesNotExist):
+            m.car_set.get(speed=0)
+
 
 # noinspection PyUnusedLocal
 def zero_sum(items):
@@ -325,6 +333,11 @@ class MockedRelationsTest(TestCase):
 
         with mocked_relations(Car):
             self.assertEqual(1, Car.objects.count())
+
+    @mocked_relations(Manufacturer)
+    def test_raises_specific_error(self):
+        with self.assertRaises(Manufacturer.DoesNotExist):
+            Manufacturer.objects.get(name='sam')
 
 
 class TestMockers(TestCase):
