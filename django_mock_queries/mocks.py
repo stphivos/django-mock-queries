@@ -1,4 +1,3 @@
-
 import os
 import sys
 import django
@@ -244,6 +243,7 @@ class PatcherChain(object):
     As a test method decorator, a test class decorator, a context manager,
     or by just calling start() and stop().
     """
+
     def __init__(self, patchers, pass_mocks=True):
         """ Initialize a patcher.
 
@@ -366,11 +366,11 @@ class ModelMocker(Mocker):
     A decorator that patches django base model's db read/write methods and wires them to a MockSet.
     """
 
-    qs = MockSet()
     default_methods = ('objects', '_meta.base_manager._insert', '_do_update')
 
     def __init__(self, cls, *methods):
         super(ModelMocker, self).__init__(cls, *(self.default_methods + methods))
+        self.qs = MockSet()
 
     def objects(self):
         return self.qs

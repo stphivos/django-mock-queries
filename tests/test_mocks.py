@@ -6,7 +6,7 @@ from mock import patch, MagicMock, PropertyMock
 from unittest import TestCase
 
 from django_mock_queries import mocks
-from django_mock_queries.mocks import monkey_patch_test_db, mock_django_connection \
+from django_mock_queries.mocks import monkey_patch_test_db, mock_django_connection, \
     MockOneToOneMap, MockOneToManyMap, PatcherChain, mocked_relations, ModelMocker
 from django_mock_queries.query import MockSet
 from tests.mock_models import Car, Sedan, Manufacturer
@@ -346,7 +346,7 @@ class TestMockers(TestCase):
             """ The real implementation would call an external service that
             we would like to skip but verify it's called before save. """
 
-    def test_generic_model_mocker(self):
+    def test_model_mocker_generic(self):
         with ModelMocker(Car):
             # New instance gets inserted
             obj = Car(speed=4)
@@ -363,7 +363,7 @@ class TestMockers(TestCase):
             obj.save()
             self.assertEqual(Car.objects.get(pk=obj.id), obj)
 
-    def test_custom_model_mocker(self):
+    def test_model_mocker_with_custom_method(self):
         with self.CarModelMocker(Car, 'validate_price') as mocker:
             obj = Car()
             obj.save()
@@ -371,7 +371,7 @@ class TestMockers(TestCase):
             mocker.method('validate_price').assert_called_with()
 
     @CarModelMocker(Car, 'validate_price')
-    def test_custom_model_mocker_callable(self, mocker):
+    def test_model_mocker_callable_with_custom_method(self, mocker):
         obj = Car()
         obj.save()
 
