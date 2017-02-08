@@ -339,6 +339,14 @@ class MockedRelationsTest(TestCase):
         with self.assertRaises(Manufacturer.DoesNotExist):
             Manufacturer.objects.get(name='sam')
 
+    @mocked_relations(Car)
+    def test_creation_of_mocksetmodel_with_concrete_fields(self):
+        mocked_fields = [f.attname for f in Car.objects.model._meta.concrete_fields]
+        assert 'make_id' in mocked_fields
+        assert 'id' in mocked_fields
+        assert 'speed' in mocked_fields
+        assert 'model' in mocked_fields
+
 
 class TestMockers(TestCase):
     class CarModelMocker(ModelMocker):

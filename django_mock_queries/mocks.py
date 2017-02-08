@@ -11,7 +11,7 @@ from functools import partial
 from itertools import chain
 from mock import Mock, MagicMock, patch, PropertyMock
 
-from .query import MockSet
+from .query import MockSet, MockSetModel
 
 
 def monkey_patch_test_db(disabled_features=None):
@@ -213,10 +213,12 @@ def mocked_relations(*models):
             Mock,
             name=model_name + '.save')))
         if hasattr(model, 'objects'):
+            field_names = [f.attname for f in model._meta.concrete_fields]
             patchers.append(patch_object(model, 'objects', new_callable=partial(
                 MockSet,
                 mock_name=model_name + '.objects',
-                cls=model)))
+                cls=model,
+                model=MockSetModel(*field_names))))
         for related_object in chain(model._meta.related_objects,
                                     model._meta.many_to_many):
             name = related_object.name

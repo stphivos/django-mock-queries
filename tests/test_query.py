@@ -6,7 +6,7 @@ from django.db.models import Q
 
 from django_mock_queries.constants import *
 from django_mock_queries.exceptions import ModelNotSpecified, ArgumentNotSupported
-from django_mock_queries.query import MockSet, MockModel
+from django_mock_queries.query import MockSet, MockModel, MockSetModel
 from tests.mock_models import Car, Sedan, Manufacturer
 
 
@@ -454,6 +454,28 @@ class TestQuery(TestCase):
         attrs = dict(foo=1, bar='a')
         self.assertRaises(ModelNotSpecified, qs.create, **attrs)
 
+    def test_query_creates_new_model_based_on_mocksetmodel(self):
+        qs = MockSet(
+            model=MockSetModel('first', 'second', 'third'),
+            cls=MockModel
+        )
+        attrs = dict(first=1, third=3)
+        obj = qs.create(**attrs)
+        obj.save.assert_called_once_with(force_insert=True, using=ANY)
+        assert obj in [x for x in qs]
+        for k, v in attrs.items():
+            assert getattr(obj, k, None) == v
+        assert getattr(obj, 'second', None) is None
+
+    def test_query_create_raises_value_error_when_kwarg_key_is_not_in_concrete_fields(self):
+        qs = MockSet(
+            model=MockSetModel('first', 'second', 'third'),
+            cls=MockModel
+        )
+        attrs = dict(first=1, second=2, third=3, fourth=4)
+        with self.assertRaises(ValueError):
+            qs.create(**attrs)
+
     def test_query_gets_unique_match_by_attrs_from_set(self):
         item_1 = MockModel(foo=1)
         item_2 = MockModel(foo=2)
@@ -528,6 +550,64 @@ class TestQuery(TestCase):
         assert hasattr(obj, 'foo') and obj.foo == 4
         assert created is True
 
+    def test_query_get_or_create_gets_existing_unique_match_with_defaults(self):
+        qs = MockSet(
+            cls=MockModel,
+            model=MockSetModel('first', 'second', 'third')
+        )
+        item_1 = MockModel(first=1)
+        item_2 = MockModel(second=2)
+        item_3 = MockModel(third=3)
+        qs.add(item_1, item_2, item_3)
+
+        obj, created = qs.get_or_create(defaults={'first': 3, 'third': 1}, second=2)
+
+        assert hasattr(obj, 'second') and obj.second == 2
+        assert created is False
+
+    def test_query_get_or_create_raises_does_multiple_objects_returned_when_more_than_one_match_with_defaults(self):
+        qs = MockSet(
+            cls=MockModel,
+            model=MockSetModel('first', 'second', 'third')
+        )
+        item_1 = MockModel(first=1)
+        item_2 = MockModel(first=1)
+        item_3 = MockModel(third=3)
+        qs.add(item_1, item_2, item_3)
+
+        qs.add(item_1, item_2, item_3)
+        with self.assertRaises(MultipleObjectsReturned):
+            qs.get_or_create(first=1, defaults={'second': 2})
+
+    def test_query_get_or_create_creates_new_model_when_no_match_with_defaults(self):
+        qs = MockSet(
+            cls=MockModel,
+            model=MockSetModel('first', 'second', 'third')
+        )
+        item_1 = MockModel(first=1)
+        item_2 = MockModel(second=2)
+        item_3 = MockModel(third=3)
+        qs.add(item_1, item_2, item_3)
+
+        obj, created = qs.get_or_create(defaults={'first': 3, 'third': 2}, second=1)
+
+        assert hasattr(obj, 'first') and obj.first == 3
+        assert hasattr(obj, 'second') and obj.second == 1
+        assert hasattr(obj, 'third') and obj.third == 2
+        assert created is True
+
+    def test_query_get_or_create_raises_value_error_when_defaults_passed_without_mockset_model(self):
+        qs = MockSet(
+            cls=MockModel
+        )
+        item_1 = MockModel(first=1)
+        item_2 = MockModel(second=2)
+        item_3 = MockModel(third=3)
+        qs.add(item_1, item_2, item_3)
+
+        with self.assertRaises(ValueError):
+            qs.get_or_create(defaults={'first': 3, 'third': 2}, second=1)
+
     def test_query_return_self_methods_accept_any_parameters_and_return_instance(self):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
         assert qs == qs.all()
@@ -594,3 +674,7 @@ class TestQuery(TestCase):
         assert results_with_fields[0]['bar'] == 3
         assert results_with_fields[1]['foo'] == 2
         assert results_with_fields[1]['bar'] == 4
+
+    def test_mocksetmodel_raises_value_error_when_args_length_is_zero(self):
+        with self.assertRaises(ValueError):
+            MockSetModel()
