@@ -2,6 +2,8 @@ from django.core.exceptions import FieldError
 
 from .constants import *
 
+import django_mock_queries.query
+
 
 def merge(first, second):
     return first + list(set(second) - set(first))
@@ -15,7 +17,8 @@ def intersect(first, second):
 def find_field_names(obj):
     field_names = set()
     field_names.update(obj._meta._forward_fields_map.keys())
-    field_names.update(obj._meta.fields_map.keys())
+    field_names.update(field.get_accessor_name()
+                       for field in obj._meta.fields_map.values())
     for parent in obj._meta.parents.keys():
         parent_fields = find_field_names(parent) or []
         field_names.update(parent_fields)
@@ -47,6 +50,15 @@ def get_attribute(obj, attr, default=None):
 
 
 def is_match(first, second, comparison=None):
+    if isinstance(first, django_mock_queries.query.MockBase):
+        return any(is_match(item, second, comparison)
+                   for item in first)
+    if (isinstance(first, (int, str)) and
+            isinstance(second, django_mock_queries.query.MockBase)):
+        try:
+            second = [item.pk for item in second]
+        except AttributeError:
+            pass  # Didn't have pk's, keep original items
     if not comparison:
         return first == second
     return {

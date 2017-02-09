@@ -16,6 +16,10 @@ class MockBase(MagicMock):
 
         super(MockBase, self).__init__(*args, **kwargs)
 
+    def __iter__(self):
+        # Make this explicit to help some IDE's with analysis.
+        super(MockBase, self).__iter__()
+
 
 def MockSet(*initial_items, **kwargs):
     items = list(initial_items)
@@ -32,6 +36,7 @@ def MockSet(*initial_items, **kwargs):
     ])
     mock_set.cls = clone.cls if clone else kwargs.get('cls', empty_func)
     mock_set.count = MagicMock(side_effect=lambda: len(items))
+    mock_set.__len__ = MagicMock(side_effect=lambda: len(items))
 
     def add(*model):
         items.extend(model)
