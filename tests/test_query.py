@@ -119,7 +119,7 @@ class TestQuery(TestCase):
 
         assert results == [item_2]
 
-    def test_pk_in(self):
+    def test_convert_to_pks(self):
         car1 = Car(id=101)
         car2 = Car(id=102)
         car3 = Car(id=103)

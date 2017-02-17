@@ -347,7 +347,7 @@ class MockedRelationsTest(TestCase):
             Manufacturer.objects.get(name='sam')
 
     @mocked_relations(Manufacturer, Car)
-    def test_filter_children(self):
+    def test_is_match_in_children(self):
         car = Car()
         manufacturer = Manufacturer()
         manufacturer.car_set.add(car)
