@@ -16,10 +16,6 @@ class MockBase(MagicMock):
 
         super(MockBase, self).__init__(*args, **kwargs)
 
-    def __iter__(self):
-        # Make this explicit to help some IDE's with analysis.
-        super(MockBase, self).__iter__()
-
 
 def MockSet(*initial_items, **kwargs):
     items = list(initial_items)
