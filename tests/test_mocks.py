@@ -22,6 +22,13 @@ class TestMocks(TestCase):
                 "Mock database tried to execute SQL for Car model."):
             Car.objects.count()
 
+    def test_exists_raises_error(self):
+        """ Get a clear error if you forget to mock a database query. """
+        with self.assertRaisesRegexp(
+                NotSupportedError,
+                "Mock database tried to execute SQL for Car model."):
+            Car.objects.exists()
+
     def test_mock_django_setup_called_again(self):
         """ Shouldn't do anything the second time you call. """
         mocks.mock_django_setup('tests.mock_settings')
@@ -338,6 +345,17 @@ class MockedRelationsTest(TestCase):
     def test_raises_specific_error(self):
         with self.assertRaises(Manufacturer.DoesNotExist):
             Manufacturer.objects.get(name='sam')
+
+    @mocked_relations(Manufacturer, Car)
+    def test_is_match_in_children(self):
+        car = Car()
+        manufacturer = Manufacturer()
+        manufacturer.car_set.add(car)
+        Manufacturer.objects.add(manufacturer)
+
+        car_manufacturers = Manufacturer.objects.filter(car_set=car)
+
+        self.assertEqual([manufacturer], list(car_manufacturers))
 
 
 class TestMockers(TestCase):

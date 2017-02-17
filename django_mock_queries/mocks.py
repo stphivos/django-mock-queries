@@ -88,6 +88,7 @@ def mock_django_connection(disabled_features=None):
         result.execute_sql.side_effect = NotSupportedError(
             "Mock database tried to execute SQL for {} model.".format(
                 queryset.model._meta.object_name))
+        result.has_results.side_effect = result.execute_sql.side_effect
         return result
 
     mock_ops.compiler.return_value.side_effect = compiler

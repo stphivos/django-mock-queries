@@ -119,6 +119,18 @@ class TestQuery(TestCase):
 
         assert results == [item_2]
 
+    def test_convert_to_pks(self):
+        car1 = Car(id=101)
+        car2 = Car(id=102)
+        car3 = Car(id=103)
+
+        old_cars = MockSet(car1, car2)
+        all_cars = MockSet(car1, car2, car3)
+
+        matches = all_cars.filter(pk__in=old_cars)
+
+        self.assertEqual(list(old_cars), list(matches))
+
     def test_query_filters_model_objects_by_bad_field(self):
         item_1 = Car(speed=1)
         item_2 = Sedan(speed=2)
@@ -594,3 +606,17 @@ class TestQuery(TestCase):
         assert results_with_fields[0]['bar'] == 3
         assert results_with_fields[1]['foo'] == 2
         assert results_with_fields[1]['bar'] == 4
+
+    def test_length1(self):
+        q = MockSet(MockModel())
+
+        n = len(q)
+
+        self.assertEqual(1, n)
+
+    def test_length2(self):
+        q = MockSet(MockModel(), MockModel())
+
+        n = len(q)
+
+        self.assertEqual(2, n)
