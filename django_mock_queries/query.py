@@ -33,6 +33,7 @@ def MockSet(*initial_items, **kwargs):
     mock_set.cls = clone.cls if clone else kwargs.get('cls', empty_func)
     mock_set.count = MagicMock(side_effect=lambda: len(items))
     mock_set.model = clone.model if clone else kwargs.get('model', None)
+    mock_set.__len__ = MagicMock(side_effect=lambda: len(items))
 
     def add(*model):
         items.extend(model)
