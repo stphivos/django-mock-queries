@@ -214,4 +214,4 @@ $ git push -u origin HEAD
 ## TODO
 
 * Add support for missing queryset functions and field lookups
-* Implement decorators for unified model patching
+* Add docs as a service like readthedocs with examples for every feature
