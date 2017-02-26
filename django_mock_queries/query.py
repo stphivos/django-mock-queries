@@ -32,6 +32,7 @@ def MockSet(*initial_items, **kwargs):
     ])
     mock_set.cls = clone.cls if clone else kwargs.get('cls', empty_func)
     mock_set.count = MagicMock(side_effect=lambda: len(items))
+    mock_set.model = clone.model if clone else kwargs.get('model', None)
     mock_set.__len__ = MagicMock(side_effect=lambda: len(items))
 
     def add(*model):
@@ -174,6 +175,15 @@ def MockSet(*initial_items, **kwargs):
     mock_set.__iter__ = MagicMock(side_effect=__iter__)
 
     def create(**attrs):
+        if mock_set.model:
+            # Make sure that every key in attrs is in concrete_fields
+            for k in attrs.keys():
+                if k not in [f.attname for f in mock_set.model._meta.concrete_fields]:
+                    raise ValueError('MockSet model has no field {}'.format(k))
+            # Fill concrete fields that are not specified in attrs with 'None'
+            for field in mock_set.model._meta.concrete_fields:
+                if field.attname not in attrs.keys():
+                    attrs[field.attname] = None
         obj = mock_set.cls(**attrs)
         if not obj:
             raise ModelNotSpecified()
@@ -194,8 +204,13 @@ def MockSet(*initial_items, **kwargs):
 
     mock_set.get = MagicMock(side_effect=get)
 
-    def get_or_create(**attrs):
-        results = filter(**attrs)
+    def get_or_create(defaults=None, **attrs):
+        if defaults is not None and mock_set.model is None:
+            raise ValueError('get_or_create() can be called only when MockSet has model attribute')
+        defaults = defaults or {}
+        lookup = attrs.copy()
+        attrs.update(defaults)
+        results = filter(**lookup)
         if not results.exists():
             return create(**attrs), True
         elif results.count() > 1:
@@ -257,11 +272,8 @@ def MockSet(*initial_items, **kwargs):
 
 def MockModel(cls=None, mock_name=None, spec_set=None, **attrs):
     mock_attrs = dict(spec=cls, name=mock_name, spec_set=spec_set)
-
-    _meta = type('_meta', (object,), dict(
-        _forward_fields_map={}, fields_map={}, parents={},
-        concrete_fields=[type('concrete_field', (object,), dict(attname=x)) for x in attrs.keys()]))
-
+    fields = [x for x in attrs.keys()]
+    _meta = MockMeta(*fields)
     mock_model = MagicMock(**mock_attrs)
 
     if mock_name:
@@ -273,6 +285,33 @@ def MockModel(cls=None, mock_name=None, spec_set=None, **attrs):
     setattr(type(mock_model), '_meta', PropertyMock(return_value=_meta))
 
     return mock_model
+
+
+def MockSetModel(*fields):
+    if len(fields) == 0:
+        raise ValueError('MockSetModel is called without fields specified')
+    _meta = MockMeta(*fields)
+    mock_model = MagicMock(spec_set=True)
+    setattr(type(mock_model), '_meta', PropertyMock(return_value=_meta))
+    return mock_model
+
+
+class MockMeta(object):
+    def __init__(self, *fields):
+        for key in ('_forward_fields_map', 'parents', 'fields_map'):
+            self.__dict__[key] = {}
+        for key in ('local_concrete_fields', 'concrete_fields', 'fields'):
+            self.__dict__[key] = []
+
+        for field in fields:
+            for key in ('local_concrete_fields', 'concrete_fields', 'fields'):
+                self.__dict__[key].append(MockField(field))
+
+
+class MockField(object):
+    def __init__(self, field):
+        for key in ('name', 'attname'):
+            self.__dict__[key] = field
 
 
 def empty_func(*args, **kwargs):
