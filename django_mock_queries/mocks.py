@@ -11,7 +11,7 @@ from functools import partial
 from itertools import chain
 from mock import Mock, MagicMock, patch, PropertyMock
 
-from .query import MockSet
+from .query import MockSet, create_model
 
 
 def monkey_patch_test_db(disabled_features=None):
@@ -122,7 +122,9 @@ class MockOneToManyMap(object):
             old_instance = old_instance_weak()
         if entry is None or old_instance is None:
             related = getattr(self.original, 'related', self.original)
-            related_objects = MockSet(cls=related.field.model)
+            related_objects = MockSet(
+                cls=related.field.model,
+                model=create_model(*[f.attname for f in related.field.model._meta.concrete_fields]))
             self.__set__(instance, related_objects)
 
         return related_objects
@@ -217,7 +219,8 @@ def mocked_relations(*models):
             patchers.append(patch_object(model, 'objects', new_callable=partial(
                 MockSet,
                 mock_name=model_name + '.objects',
-                cls=model)))
+                cls=model,
+                model=create_model(*[f.attname for f in model._meta.concrete_fields]))))
         for related_object in chain(model._meta.related_objects,
                                     model._meta.many_to_many):
             name = related_object.name

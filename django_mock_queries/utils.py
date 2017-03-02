@@ -1,6 +1,7 @@
 from django.core.exceptions import FieldError
 
 from .constants import *
+from .exceptions import *
 
 import django_mock_queries.query
 
@@ -95,3 +96,10 @@ def matches(*source, **attrs):
     for x in source:
         if x not in exclude:
             yield x
+
+
+def validate_mock_set(mock_set):
+    if mock_set.model is None:
+        raise ModelNotSpecified()
+    if mock_set.cls is None:
+        raise ClsNotSpecified()
