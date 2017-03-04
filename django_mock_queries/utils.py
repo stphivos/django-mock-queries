@@ -101,5 +101,3 @@ def matches(*source, **attrs):
 def validate_mock_set(mock_set):
     if mock_set.model is None:
         raise ModelNotSpecified()
-    if mock_set.cls is None:
-        raise ClsNotSpecified()

@@ -5,7 +5,7 @@ from django.core.exceptions import FieldError
 from django.db.models import Q
 
 from django_mock_queries.constants import *
-from django_mock_queries.exceptions import ModelNotSpecified, ArgumentNotSupported, ClsNotSpecified
+from django_mock_queries.exceptions import ModelNotSpecified, ArgumentNotSupported
 from django_mock_queries.query import MockSet, MockModel, create_model
 from tests.mock_models import Car, Sedan, Manufacturer
 
@@ -450,27 +450,19 @@ class TestQuery(TestCase):
         assert [x for x in MockSet(*items)] == items
 
     def test_query_creates_new_model_and_adds_to_set(self):
-        qs = MockSet(model=create_model('foo', 'bar'))
+        qs = MockSet(model=create_model('foo', 'bar', 'none'))
         attrs = dict(foo=1, bar='a')
         obj = qs.create(**attrs)
         obj.save.assert_called_once_with(force_insert=True, using=ANY)
         assert obj in [x for x in qs]
-
-        for k, v in attrs.items():
-            assert getattr(obj, k, None) == v
+        assert hasattr(obj, 'foo') and obj.foo == 1
+        assert hasattr(obj, 'bar') and obj.bar == 'a'
+        assert hasattr(obj, 'none') and obj.none is None
 
     def test_query_create_raises_model_not_specified_when_mockset_model_is_none(self):
         qs = MockSet()
         attrs = dict(foo=1, bar='a')
         self.assertRaises(ModelNotSpecified, qs.create, **attrs)
-
-    def test_query_create_raises_cls_not_specified_when_mockset_cls_is_none(self):
-        qs = MockSet(
-            cls=None,
-            model=create_model('foo', 'bar')
-        )
-        attrs = dict(foo=1, bar='a')
-        self.assertRaises(ClsNotSpecified, qs.create, **attrs)
 
     def test_query_create_raises_value_error_when_kwarg_key_is_not_in_concrete_fields(self):
         qs = MockSet(
@@ -503,7 +495,7 @@ class TestQuery(TestCase):
         item_2 = Car(model='pious')
         item_3 = Car(model='hummus')
 
-        self.mock_set = MockSet(item_1, item_2, item_3, cls=Car, model=create_model('model'))
+        self.mock_set = MockSet(item_1, item_2, item_3, model=Car)
         self.assertRaises(Car.DoesNotExist, self.mock_set.get, model='clowncar')
 
     def test_filter_keeps_class(self):
@@ -511,7 +503,7 @@ class TestQuery(TestCase):
         item_2 = Car(model='pious')
         item_3 = Car(model='hummus')
 
-        self.mock_set = MockSet(item_1, item_2, item_3, cls=Car, model=create_model('model'))
+        self.mock_set = MockSet(item_1, item_2, item_3, model=Car)
         filtered = self.mock_set.filter(model__endswith='s')
         self.assertRaises(Car.DoesNotExist, filtered.get, model='clowncar')
 
@@ -590,11 +582,11 @@ class TestQuery(TestCase):
         item_3 = MockModel(third=3)
         qs.add(item_1, item_2, item_3)
 
-        obj, created = qs.get_or_create(defaults={'first': 3, 'third': 2}, second=1)
+        obj, created = qs.get_or_create(defaults={'first': 3}, second=1)
 
         assert hasattr(obj, 'first') and obj.first == 3
         assert hasattr(obj, 'second') and obj.second == 1
-        assert hasattr(obj, 'third') and obj.third == 2
+        assert hasattr(obj, 'third') and obj.third is None
         assert created is True
 
     def test_query_get_or_create_raises_model_not_specified_with_defaults_when_mockset_model_is_none(self):
@@ -605,19 +597,6 @@ class TestQuery(TestCase):
         qs.add(item_1, item_2, item_3)
 
         with self.assertRaises(ModelNotSpecified):
-            qs.get_or_create(defaults={'first': 3, 'third': 2}, second=1)
-
-    def test_query_get_or_create_raises_cls_not_specified_with_defaults_when_mockset_cls_is_none(self):
-        qs = MockSet(
-            cls=None,
-            model=create_model('first', 'second', 'third')
-        )
-        item_1 = MockModel(first=1)
-        item_2 = MockModel(second=2)
-        item_3 = MockModel(third=3)
-        qs.add(item_1, item_2, item_3)
-
-        with self.assertRaises(ClsNotSpecified):
             qs.get_or_create(defaults={'first': 3, 'third': 2}, second=1)
 
     def test_query_return_self_methods_accept_any_parameters_and_return_instance(self):

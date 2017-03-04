@@ -30,7 +30,6 @@ def MockSet(*initial_items, **kwargs):
         'prefetch_related',
         'select_for_update'
     ])
-    mock_set.cls = clone.cls if clone else kwargs.get('cls', MockModel)
     mock_set.count = MagicMock(side_effect=lambda: len(items))
     mock_set.model = clone.model if clone else kwargs.get('model', None)
     mock_set.__len__ = MagicMock(side_effect=lambda: len(items))
@@ -139,7 +138,7 @@ def MockSet(*initial_items, **kwargs):
     mock_set.distinct = MagicMock(side_effect=distinct)
 
     def raise_does_not_exist():
-        does_not_exist = getattr(mock_set.cls, 'DoesNotExist', ObjectDoesNotExist)
+        does_not_exist = getattr(mock_set.model, 'DoesNotExist', ObjectDoesNotExist)
         raise does_not_exist()
 
     def latest(field):
@@ -178,8 +177,11 @@ def MockSet(*initial_items, **kwargs):
         validate_mock_set(mock_set)
         for k in attrs.keys():
             if k not in [f.attname for f in mock_set.model._meta.concrete_fields]:
-                raise ValueError('MockSet model has no field {}'.format(k))
-        obj = mock_set.cls(**attrs)
+                raise ValueError('{} is an invalid keyword argument for this function'.format(k))
+        for field in mock_set.model._meta.concrete_fields:
+            if field.attname not in attrs.keys():
+                attrs[field.attname] = None
+        obj = mock_set.model(**attrs)
         obj.save(force_insert=True, using=MagicMock())
         add(obj)
         return obj
@@ -276,6 +278,9 @@ class MockModel(dict):
 
     def __hash__(self):
         return hash(tuple(sorted(self.items())))
+
+    def __call__(self, *args, **kwargs):
+        return MockModel(*args, **kwargs)
 
     @property
     def _meta(self):
