@@ -3,7 +3,7 @@ from operator import attrgetter
 
 from .constants import *
 from .exceptions import *
-from .utils import matches, merge, intersect, get_attribute
+from .utils import matches, merge, intersect, get_attribute, validate_mock_set
 
 
 class MockBase(MagicMock):
@@ -30,8 +30,8 @@ def MockSet(*initial_items, **kwargs):
         'prefetch_related',
         'select_for_update'
     ])
-    mock_set.cls = clone.cls if clone else kwargs.get('cls', empty_func)
     mock_set.count = MagicMock(side_effect=lambda: len(items))
+    mock_set.model = clone.model if clone else kwargs.get('model', None)
     mock_set.__len__ = MagicMock(side_effect=lambda: len(items))
 
     def add(*model):
@@ -138,7 +138,7 @@ def MockSet(*initial_items, **kwargs):
     mock_set.distinct = MagicMock(side_effect=distinct)
 
     def raise_does_not_exist():
-        does_not_exist = getattr(mock_set.cls, 'DoesNotExist', ObjectDoesNotExist)
+        does_not_exist = getattr(mock_set.model, 'DoesNotExist', ObjectDoesNotExist)
         raise does_not_exist()
 
     def latest(field):
@@ -174,9 +174,14 @@ def MockSet(*initial_items, **kwargs):
     mock_set.__iter__ = MagicMock(side_effect=__iter__)
 
     def create(**attrs):
-        obj = mock_set.cls(**attrs)
-        if not obj:
-            raise ModelNotSpecified()
+        validate_mock_set(mock_set)
+        for k in attrs.keys():
+            if k not in [f.attname for f in mock_set.model._meta.concrete_fields]:
+                raise ValueError('{} is an invalid keyword argument for this function'.format(k))
+        for field in mock_set.model._meta.concrete_fields:
+            if field.attname not in attrs.keys():
+                attrs[field.attname] = None
+        obj = mock_set.model(**attrs)
         obj.save(force_insert=True, using=MagicMock())
         add(obj)
         return obj
@@ -194,8 +199,13 @@ def MockSet(*initial_items, **kwargs):
 
     mock_set.get = MagicMock(side_effect=get)
 
-    def get_or_create(**attrs):
-        results = filter(**attrs)
+    def get_or_create(defaults=None, **attrs):
+        if defaults is not None:
+            validate_mock_set(mock_set)
+        defaults = defaults or {}
+        lookup = attrs.copy()
+        attrs.update(defaults)
+        results = filter(**lookup)
         if not results.exists():
             return create(**attrs), True
         elif results.count() > 1:
@@ -255,25 +265,49 @@ def MockSet(*initial_items, **kwargs):
     return mock_set
 
 
-def MockModel(cls=None, mock_name=None, spec_set=None, **attrs):
-    mock_attrs = dict(spec=cls, name=mock_name, spec_set=spec_set)
+class MockModel(dict):
+    def __init__(self, *args, **kwargs):
+        self.save = PropertyMock()
+        super(MockModel, self).__init__(*args, **kwargs)
 
-    _meta = type('_meta', (object,), dict(
-        _forward_fields_map={}, fields_map={}, parents={},
-        concrete_fields=[type('concrete_field', (object,), dict(attname=x)) for x in attrs.keys()]))
+    def __getattr__(self, item):
+        return self.get(item, None)
 
-    mock_model = MagicMock(**mock_attrs)
+    def __setattr__(self, key, value):
+        self.__setitem__(key, value)
 
-    if mock_name:
-        setattr(type(mock_model), '__repr__', MagicMock(return_value=mock_name))
+    def __hash__(self):
+        return hash(tuple(sorted(self.items())))
 
-    for key, value in attrs.items():
-        setattr(type(mock_model), key, PropertyMock(return_value=value))
+    def __call__(self, *args, **kwargs):
+        return MockModel(*args, **kwargs)
 
-    setattr(type(mock_model), '_meta', PropertyMock(return_value=_meta))
+    @property
+    def _meta(self):
+        keys_list = list(self.keys())
+        keys_list.remove('save')
+        return MockOptions(*keys_list)
 
-    return mock_model
+
+def create_model(*fields):
+    if len(fields) == 0:
+        raise ValueError('create_model() is called without fields specified')
+    return MockModel(**{f: None for f in fields})
 
 
-def empty_func(*args, **kwargs):
-    pass
+class MockOptions(object):
+    def __init__(self, *fields):
+        for key in ('_forward_fields_map', 'parents', 'fields_map'):
+            self.__dict__[key] = {}
+        for key in ('local_concrete_fields', 'concrete_fields', 'fields'):
+            self.__dict__[key] = []
+
+        for field in fields:
+            for key in ('local_concrete_fields', 'concrete_fields', 'fields'):
+                self.__dict__[key].append(MockField(field))
+
+
+class MockField(object):
+    def __init__(self, field):
+        for key in ('name', 'attname'):
+            self.__dict__[key] = field

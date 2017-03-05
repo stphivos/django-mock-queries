@@ -6,7 +6,7 @@ from django.db.models import Q
 
 from django_mock_queries.constants import *
 from django_mock_queries.exceptions import ModelNotSpecified, ArgumentNotSupported
-from django_mock_queries.query import MockSet, MockModel
+from django_mock_queries.query import MockSet, MockModel, create_model
 from tests.mock_models import Car, Sedan, Manufacturer
 
 
@@ -450,21 +450,27 @@ class TestQuery(TestCase):
         assert [x for x in MockSet(*items)] == items
 
     def test_query_creates_new_model_and_adds_to_set(self):
-        qs = MockSet(cls=MockModel)
-
+        qs = MockSet(model=create_model('foo', 'bar', 'none'))
         attrs = dict(foo=1, bar='a')
         obj = qs.create(**attrs)
-
         obj.save.assert_called_once_with(force_insert=True, using=ANY)
         assert obj in [x for x in qs]
+        assert hasattr(obj, 'foo') and obj.foo == 1
+        assert hasattr(obj, 'bar') and obj.bar == 'a'
+        assert hasattr(obj, 'none') and obj.none is None
 
-        for k, v in attrs.items():
-            assert getattr(obj, k, None) == v
-
-    def test_query_create_raises_model_not_specified_when_mock_set_called_without_cls(self):
+    def test_query_create_raises_model_not_specified_when_mockset_model_is_none(self):
         qs = MockSet()
         attrs = dict(foo=1, bar='a')
         self.assertRaises(ModelNotSpecified, qs.create, **attrs)
+
+    def test_query_create_raises_value_error_when_kwarg_key_is_not_in_concrete_fields(self):
+        qs = MockSet(
+            model=create_model('first', 'second', 'third')
+        )
+        attrs = dict(first=1, second=2, third=3, fourth=4)
+        with self.assertRaises(ValueError):
+            qs.create(**attrs)
 
     def test_query_gets_unique_match_by_attrs_from_set(self):
         item_1 = MockModel(foo=1)
@@ -489,7 +495,7 @@ class TestQuery(TestCase):
         item_2 = Car(model='pious')
         item_3 = Car(model='hummus')
 
-        self.mock_set = MockSet(item_1, item_2, item_3, cls=Car)
+        self.mock_set = MockSet(item_1, item_2, item_3, model=Car)
         self.assertRaises(Car.DoesNotExist, self.mock_set.get, model='clowncar')
 
     def test_filter_keeps_class(self):
@@ -497,7 +503,7 @@ class TestQuery(TestCase):
         item_2 = Car(model='pious')
         item_3 = Car(model='hummus')
 
-        self.mock_set = MockSet(item_1, item_2, item_3, cls=Car)
+        self.mock_set = MockSet(item_1, item_2, item_3, model=Car)
         filtered = self.mock_set.filter(model__endswith='s')
         self.assertRaises(Car.DoesNotExist, filtered.get, model='clowncar')
 
@@ -533,12 +539,65 @@ class TestQuery(TestCase):
         item_2 = MockModel(foo=2)
         item_3 = MockModel(foo=3)
 
-        qs = MockSet(cls=MockModel)
+        qs = MockSet(model=create_model('foo'))
         qs.add(item_1, item_2, item_3)
         obj, created = qs.get_or_create(foo=4)
 
         assert hasattr(obj, 'foo') and obj.foo == 4
         assert created is True
+
+    def test_query_get_or_create_gets_existing_unique_match_with_defaults(self):
+        qs = MockSet(
+            model=create_model('first', 'second', 'third')
+        )
+        item_1 = MockModel(first=1)
+        item_2 = MockModel(second=2)
+        item_3 = MockModel(third=3)
+        qs.add(item_1, item_2, item_3)
+
+        obj, created = qs.get_or_create(defaults={'first': 3, 'third': 1}, second=2)
+
+        assert hasattr(obj, 'second') and obj.second == 2
+        assert created is False
+
+    def test_query_get_or_create_raises_does_multiple_objects_returned_when_more_than_one_match_with_defaults(self):
+        qs = MockSet(
+            model=create_model('first', 'second', 'third')
+        )
+        item_1 = MockModel(first=1)
+        item_2 = MockModel(first=1)
+        item_3 = MockModel(third=3)
+        qs.add(item_1, item_2, item_3)
+
+        qs.add(item_1, item_2, item_3)
+        with self.assertRaises(MultipleObjectsReturned):
+            qs.get_or_create(first=1, defaults={'second': 2})
+
+    def test_query_get_or_create_creates_new_model_when_no_match_with_defaults(self):
+        qs = MockSet(
+            model=create_model('first', 'second', 'third')
+        )
+        item_1 = MockModel(first=1)
+        item_2 = MockModel(second=2)
+        item_3 = MockModel(third=3)
+        qs.add(item_1, item_2, item_3)
+
+        obj, created = qs.get_or_create(defaults={'first': 3}, second=1)
+
+        assert hasattr(obj, 'first') and obj.first == 3
+        assert hasattr(obj, 'second') and obj.second == 1
+        assert hasattr(obj, 'third') and obj.third is None
+        assert created is True
+
+    def test_query_get_or_create_raises_model_not_specified_with_defaults_when_mockset_model_is_none(self):
+        qs = MockSet()
+        item_1 = MockModel(first=1)
+        item_2 = MockModel(second=2)
+        item_3 = MockModel(third=3)
+        qs.add(item_1, item_2, item_3)
+
+        with self.assertRaises(ModelNotSpecified):
+            qs.get_or_create(defaults={'first': 3, 'third': 2}, second=1)
 
     def test_query_return_self_methods_accept_any_parameters_and_return_instance(self):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
@@ -620,3 +679,7 @@ class TestQuery(TestCase):
         n = len(q)
 
         self.assertEqual(2, n)
+
+    def test_create_model_raises_value_error_with_zero_arguments(self):
+        with self.assertRaises(ValueError):
+            create_model()
