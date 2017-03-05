@@ -2,11 +2,12 @@ from mock import MagicMock, ANY
 from unittest import TestCase
 
 from django.core.exceptions import FieldError
-from django.db.models import Q
+from django.db.models import Q, Avg
 
 from django_mock_queries.constants import *
 from django_mock_queries.exceptions import ModelNotSpecified, ArgumentNotSupported
 from django_mock_queries.query import MockSet, MockModel, create_model
+from django_mock_queries.mocks import mocked_relations
 from tests.mock_models import Car, Sedan, Manufacturer
 
 
@@ -185,6 +186,18 @@ class TestQuery(TestCase):
         result = self.mock_set.aggregate(expr)
 
         assert result['foo__sum'] == sum([x.foo for x in items if x.foo is not None])
+
+    def test_query_aggregate_on_related_field(self):
+        with mocked_relations(Manufacturer):
+            cars = [Car(speed=1), Car(speed=2), Car(speed=3)]
+
+            make = Manufacturer()
+            make.car_set = MockSet(*cars)
+
+            self.mock_set.add(make)
+
+            result = self.mock_set.aggregate(Avg('car__speed'))
+            assert result['car__speed__avg'] == sum([c.speed for c in cars]) / len(cars)
 
     def test_query_aggregate_performs_count_on_queryset_field(self):
         items = [

@@ -1,4 +1,5 @@
 from django.core.exceptions import FieldError
+from mock import Mock
 
 from .constants import *
 from .exceptions import *
@@ -15,36 +16,65 @@ def intersect(first, second):
 
 
 # noinspection PyProtectedMember
-def find_field_names(obj):
-    field_names = set()
-    field_names.update(obj._meta._forward_fields_map.keys())
-    field_names.update(field.get_accessor_name()
-                       for field in obj._meta.fields_map.values())
-    for parent in obj._meta.parents.keys():
-        parent_fields = find_field_names(parent) or []
-        field_names.update(parent_fields)
-    return sorted(field_names)
+def find_field_names(obj, **kwargs):
+    def names(field):
+        name = field.get_accessor_name()
+        model_name = field.related_model._meta.model_name.lower()
+
+        if kwargs.get('related_set_singular', False) and name[-4:] == '_set':
+            return {model_name: name}
+        else:
+            return {name: name}
+
+    if not hasattr(obj, '_meta'):
+        # It is possibly a MockSet.
+        use_obj = getattr(obj, 'model', None)
+
+        # Make it easier for MockSet, but Django's QuerySet will always have a model.
+        if not use_obj and is_list_like_iter(obj) and len(obj) > 0:
+            obj = obj[0]
+
+    field_names = {}
+
+    if hasattr(obj, '_meta'):
+        field_names.update({key: key for key in obj._meta._forward_fields_map.keys()})
+        [field_names.update(names(field)) for field in obj._meta.fields_map.values()]
+
+        for parent in obj._meta.parents.keys():
+            field_names.update({key: key for key in find_field_names(parent)[0]})
+
+    return list(field_names.keys()), list(field_names.values())
 
 
-def get_attribute(obj, attr, default=None):
+def get_attribute(obj, attr, default=None, **kwargs):
     result = obj
     comparison = None
     parts = attr.split('__')
 
-    for p in parts:
-        if p in COMPARISONS:
-            comparison = p
+    for nested_field in parts:
+        if nested_field in COMPARISONS:
+            comparison = nested_field
         elif result is None:
             break
         else:
-            field_names = find_field_names(result)
-            if p != 'pk' and field_names and p not in field_names:
+            lookup_fields, target_fields = find_field_names(result, **kwargs)
+
+            if nested_field != 'pk' and lookup_fields and nested_field not in lookup_fields:
                 message = "Cannot resolve keyword '{}' into field. Choices are {}.".format(
-                    p,
-                    ', '.join(map(repr, map(str, field_names)))
+                    nested_field,
+                    ', '.join(map(repr, map(str, sorted(lookup_fields))))
                 )
                 raise FieldError(message)
-            result = getattr(result, p, None)
+
+            if nested_field in lookup_fields:
+                target_field = target_fields[lookup_fields.index(nested_field)]
+            else:
+                target_field = nested_field
+
+            if is_list_like_iter(result):
+                result = [getattr(x, target_field, None) for x in result]
+            else:
+                result = getattr(result, target_field, None)
 
     value = result if result is not None else default
     return value, comparison
@@ -101,3 +131,14 @@ def matches(*source, **attrs):
 def validate_mock_set(mock_set):
     if mock_set.model is None:
         raise ModelNotSpecified()
+
+
+def is_list_like_iter(obj):
+    if isinstance(obj, django_mock_queries.query.MockModel):
+        return False
+    elif isinstance(obj, django_mock_queries.query.MockBase):
+        return True
+    elif isinstance(obj, Mock):
+        return False
+
+    return hasattr(obj, '__iter__') and not isinstance(obj, str)
