@@ -3,7 +3,7 @@ from operator import attrgetter
 
 from .constants import *
 from .exceptions import *
-from .utils import matches, merge, intersect, get_attribute, validate_mock_set
+from .utils import matches, merge, intersect, get_attribute, validate_mock_set, is_list_like_iter
 
 
 class MockBase(MagicMock):
@@ -99,11 +99,20 @@ def MockSet(*initial_items, **kwargs):
 
     def aggregate(*args, **kwargs):
         result = {}
+
         for expr in set(args):
             kwargs['{0}__{1}'.format(expr.source_expressions[0].name, expr.function).lower()] = expr
+
         for alias, expr in kwargs.items():
-            values = [y for y in [getattr(x, expr.source_expressions[0].name) for x in items] if y is not None]
+            values = []
             expr_result = None
+
+            for x in items:
+                val = get_attribute(x, expr.source_expressions[0].name, related_set_singular=True)[0]
+                if val is None:
+                    continue
+                values.extend(val if is_list_like_iter(val) else [val])
+
             if len(values) > 0:
                 expr_result = {
                     AGGREGATES_SUM: lambda: sum(values),
@@ -112,9 +121,12 @@ def MockSet(*initial_items, **kwargs):
                     AGGREGATES_MIN: lambda: min(values),
                     AGGREGATES_AVG: lambda: sum(values) / len(values)
                 }[expr.function]()
+
             if len(values) == 0 and expr.function == AGGREGATES_COUNT:
                 expr_result = 0
+
             result[alias] = expr_result
+
         return result
 
     mock_set.aggregate = MagicMock(side_effect=aggregate)
