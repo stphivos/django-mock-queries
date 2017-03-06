@@ -28,6 +28,11 @@ class Car(models.Model):
         super(Car, self).save(*args, **kwargs)
 
 
+class CarVariation(models.Model):
+    car = models.ForeignKey(Car, related_name='variations')
+    color = models.CharField(max_length=100)
+
+
 class Sedan(Car):
     pass
 

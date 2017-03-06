@@ -32,7 +32,7 @@ def find_field_names(obj, **kwargs):
 
         # Make it easier for MockSet, but Django's QuerySet will always have a model.
         if not use_obj and is_list_like_iter(obj) and len(obj) > 0:
-            obj = obj[0]
+            return find_field_names(obj[0], **kwargs)
 
     field_names = {}
 
@@ -72,7 +72,7 @@ def get_attribute(obj, attr, default=None, **kwargs):
                 target_field = nested_field
 
             if is_list_like_iter(result):
-                result = [getattr(x, target_field, None) for x in result]
+                result = [get_attribute(x, target_field)[0] for x in result]
             else:
                 result = getattr(result, target_field, None)
 
@@ -142,3 +142,13 @@ def is_list_like_iter(obj):
         return False
 
     return hasattr(obj, '__iter__') and not isinstance(obj, str)
+
+
+def flatten_list(source):
+    target = []
+    for x in source:
+        if not is_list_like_iter(x):
+            target.append(x)
+        else:
+            target.extend(flatten_list(x))
+    return target

@@ -8,12 +8,15 @@ from django_mock_queries.constants import *
 from django_mock_queries.exceptions import ModelNotSpecified, ArgumentNotSupported
 from django_mock_queries.query import MockSet, MockModel, create_model
 from django_mock_queries.mocks import mocked_relations
-from tests.mock_models import Car, Sedan, Manufacturer
+from tests.mock_models import Car, CarVariation, Sedan, Manufacturer
 
 
 class TestQuery(TestCase):
     def setUp(self):
         self.mock_set = MockSet()
+
+    def tearDown(self):
+        self.mock_set.clear()
 
     def test_query_counts_items_in_set(self):
         items = [1, 2, 3]
@@ -143,7 +146,7 @@ class TestQuery(TestCase):
         with self.assertRaisesRegexp(
                 FieldError,
                 r"Cannot resolve keyword 'bad_field' into field\. "
-                r"Choices are 'id', 'make', 'make_id', 'model', 'passengers', 'sedan', 'speed'\."):
+                r"Choices are 'id', 'make', 'make_id', 'model', 'passengers', 'sedan', 'speed', 'variations'\."):
             self.mock_set.filter(bad_field='bogus')
 
     def test_query_exclude(self):
@@ -632,7 +635,7 @@ class TestQuery(TestCase):
 
     def test_query_values_list_raises_attribute_error_when_field_is_not_in_meta_concrete_fields(self):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
-        self.assertRaises(AttributeError, qs.values_list, 'bar')
+        self.assertRaises(FieldError, qs.values_list, 'bar')
 
     def test_query_values_list_raises_not_implemented_if_no_fields_specified(self):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
@@ -654,9 +657,30 @@ class TestQuery(TestCase):
         assert results_with_fields[0] == (1, 3)
         assert results_with_fields[1] == (2, 4)
 
+    def test_query_values_list_of_nested_field(self):
+        with mocked_relations(Manufacturer, Car):
+            make = Manufacturer(name='vw')
+            self.mock_set.add(make)
+
+            polo = Car(make=make, model='polo', speed=240)
+            golf = Car(make=make, model='golf', speed=260)
+
+            polo_white = CarVariation(car=polo, color='white')
+            golf_white = CarVariation(car=golf, color='white')
+            golf_black = CarVariation(car=golf, color='black')
+
+            make.car_set = MockSet(polo, golf)
+            polo.variations = MockSet(polo_white)
+            golf.variations = MockSet(golf_white, golf_black)
+
+            data = list(self.mock_set.values_list('name', 'car__model', 'car__variations__color'))
+
+            assert (make.name, polo.model, polo_white.color) in data
+            assert (make.name, golf.model, golf_black.color) in data
+
     def test_query_values_raises_attribute_error_when_field_is_not_in_meta_concrete_fields(self):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
-        self.assertRaises(AttributeError, qs.values, 'bar')
+        self.assertRaises(FieldError, qs.values, 'bar')
 
     def test_query_values(self):
         item_1 = MockModel(foo=1, bar=3, foobar=5)
@@ -678,6 +702,27 @@ class TestQuery(TestCase):
         assert results_with_fields[0]['bar'] == 3
         assert results_with_fields[1]['foo'] == 2
         assert results_with_fields[1]['bar'] == 4
+
+    def test_query_values_of_nested_field(self):
+        with mocked_relations(Manufacturer, Car):
+            make = Manufacturer(name='vw')
+            self.mock_set.add(make)
+
+            polo = Car(make=make, model='polo', speed=240)
+            golf = Car(make=make, model='golf', speed=260)
+
+            polo_white = CarVariation(car=polo, color='white')
+            golf_white = CarVariation(car=golf, color='white')
+            golf_black = CarVariation(car=golf, color='black')
+
+            make.car_set = MockSet(polo, golf)
+            polo.variations = MockSet(polo_white)
+            golf.variations = MockSet(golf_white, golf_black)
+
+            data = list(self.mock_set.values('car__model', 'car__variations__color', 'name'))
+            assert {'name': make.name, 'car__model': polo.model, 'car__variations__color': polo_white.color} in data
+            assert {'name': make.name, 'car__model': golf.model, 'car__variations__color': golf_white.color} in data
+            assert {'name': make.name, 'car__model': golf.model, 'car__variations__color': golf_black.color} in data
 
     def test_length1(self):
         q = MockSet(MockModel())

@@ -1,9 +1,9 @@
-from mock import MagicMock, PropertyMock
+from mock import Mock, MagicMock, PropertyMock
 from operator import attrgetter
 
 from .constants import *
 from .exceptions import *
-from .utils import matches, merge, intersect, get_attribute, validate_mock_set, is_list_like_iter
+from .utils import matches, merge, intersect, get_attribute, validate_mock_set, is_list_like_iter, flatten_list
 
 
 class MockBase(MagicMock):
@@ -18,7 +18,7 @@ class MockBase(MagicMock):
 
 
 def MockSet(*initial_items, **kwargs):
-    items = list(initial_items)
+    items = list()
     clone = kwargs.get('clone', None)
 
     mock_set = MockBase(spec=DjangoQuerySet, return_self_methods=[
@@ -34,9 +34,16 @@ def MockSet(*initial_items, **kwargs):
     mock_set.model = clone.model if clone else kwargs.get('model', None)
     mock_set.__len__ = MagicMock(side_effect=lambda: len(items))
 
-    def add(*model):
-        items.extend(model)
+    def add(*models):
+        # Initialize MockModel default fields from MockSet model fields if defined
+        if mock_set.model:
+            for model in models:
+                if isinstance(model, MockModel) or isinstance(model, Mock):
+                    [setattr(model, f.name, None) for f in mock_set.model._meta.fields if f.name not in model.keys()]
 
+        items.extend(models)
+
+    add(*initial_items)
     mock_set.add = MagicMock(side_effect=add)
 
     def remove(**attrs):
@@ -227,6 +234,42 @@ def MockSet(*initial_items, **kwargs):
 
     mock_set.get_or_create = MagicMock(side_effect=get_or_create)
 
+    def values(*fields):
+        result = []
+        for item in items:
+            if len(fields) == 0:
+                field_names = [f.attname for f in item._meta.concrete_fields]
+            else:
+                field_names = list(fields)
+
+            field_buckets = {}
+            result_count = 1
+
+            for field in sorted(field_names, key=lambda k: k.count('__')):
+                value = get_attribute(item, field, related_set_singular=True)[0]
+
+                if is_list_like_iter(value):
+                    value = flatten_list(value)
+                    result_count = max(result_count, len(value))
+
+                    for bucket, data in field_buckets.items():
+                        while len(data) < result_count:
+                            data.append(data[-1])
+
+                    field_buckets[field] = value
+                else:
+                    field_buckets[field] = [value]
+
+            item_dicts = []
+            for i in range(result_count):
+                item_dicts.append({k: v[i] for k, v in field_buckets.items()})
+
+            result.extend(item_dicts)
+
+        return MockSet(*result, clone=mock_set)
+
+    mock_set.values = MagicMock(side_effect=values)
+
     def values_list(*fields, **kwargs):
         flat = kwargs.pop('flat', False)
 
@@ -238,41 +281,18 @@ def MockSet(*initial_items, **kwargs):
             raise NotImplementedError('values_list() with no arguments is not implemented')
 
         result = []
-        if fields:
-            for item in items:
-                a = list()
-                for field in fields:
-                    if field not in [f.attname for f in item._meta.concrete_fields]:
-                        raise AttributeError('Mocked model %s has no field %s' % (item, field))
-                    a.append(getattr(item, field))
-                if flat:
-                    result.append(a[0])
-                else:
-                    result.append(tuple(a))
+        for item in list(values(*fields)):
+            if flat:
+                result.append(item[fields[0]])
+            else:
+                data = []
+                for key in sorted(item.keys(), key=lambda k: fields.index(k)):
+                    data.append(item[key])
+                result.append(tuple(data))
 
         return MockSet(*result, clone=mock_set)
 
     mock_set.values_list = MagicMock(side_effect=values_list)
-
-    def values(*fields):
-        result = []
-        for item in items:
-            if len(fields) == 0:
-                item_dict = {}
-                for field in [f.attname for f in item._meta.concrete_fields]:
-                    item_dict[field] = getattr(item, field)
-                result.append(item_dict)
-            else:
-                item_dict = {}
-                for field in fields:
-                    if field not in [f.attname for f in item._meta.concrete_fields]:
-                        raise AttributeError('Mocked model %s has no field %s' % (item, field))
-                    item_dict[field] = getattr(item, field)
-                result.append(item_dict)
-
-        return MockSet(*result, clone=mock_set)
-
-    mock_set.values = MagicMock(side_effect=values)
 
     return mock_set
 
@@ -308,15 +328,21 @@ def create_model(*fields):
 
 
 class MockOptions(object):
-    def __init__(self, *fields):
+    def __init__(self, *field_names):
+        fields = {name: MockField(name) for name in field_names}
+
         for key in ('_forward_fields_map', 'parents', 'fields_map'):
             self.__dict__[key] = {}
+
+            if key == '_forward_fields_map':
+                for name, obj in fields.items():
+                    self.__dict__[key][name] = obj
+
         for key in ('local_concrete_fields', 'concrete_fields', 'fields'):
             self.__dict__[key] = []
 
-        for field in fields:
-            for key in ('local_concrete_fields', 'concrete_fields', 'fields'):
-                self.__dict__[key].append(MockField(field))
+            for name, obj in fields.items():
+                self.__dict__[key].append(obj)
 
 
 class MockField(object):
