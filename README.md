@@ -213,5 +213,12 @@ $ git push -u origin HEAD
 
 ## TODO
 
-* Add support for missing queryset functions and field lookups
 * Add docs as a service like readthedocs with examples for every feature
+* Add support for missing QuerySet methods/Field lookups/Aggregation functions:
+    * Methods that return new QuerySets: annotate, reverse, dates, datetimes, none, extra, raw
+
+    * Methods that do not return QuerySets: update_or_create, bulk_create, in_bulk, update, delete, as_manager
+
+    * Field lookups: range, date, year, month, day, week_day, hour, minute, second, search, regex, iregex
+
+    * Aggregation functions: StdDev, Variance
