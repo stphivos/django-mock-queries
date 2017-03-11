@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from mock import patch, MagicMock
 from unittest import TestCase
 
@@ -59,6 +60,71 @@ class TestUtils(TestCase):
         value, comparison = utils.get_attribute(obj, 'foo', default_value)
         assert value == default_value
         assert comparison is None
+
+    def test_get_attribute_with_date_and_datetime(self):
+        obj = MagicMock(foo=date(2017, 12, 31))
+        value, comparison = utils.get_attribute(
+            obj, 'foo__' + constants.COMPARISON_YEAR + '__' + constants.COMPARISON_GT
+        )
+        assert value == 2017
+        assert comparison == constants.COMPARISON_GT
+
+        value, comparison = utils.get_attribute(
+            obj, 'foo__' + constants.COMPARISON_MONTH + '__' + constants.COMPARISON_GT
+        )
+        assert value == 12
+        assert comparison == constants.COMPARISON_GT
+
+        value, comparison = utils.get_attribute(
+            obj, 'foo__' + constants.COMPARISON_DAY + '__' + constants.COMPARISON_GT
+        )
+        assert value == 31
+        assert comparison == constants.COMPARISON_GT
+
+        obj = MagicMock(foo=datetime(2017, 12, 31, 22, 45, 59))
+        value, comparison = utils.get_attribute(
+            obj, 'foo__' + constants.COMPARISON_YEAR + '__' + constants.COMPARISON_GT
+        )
+        assert value == 2017
+        assert comparison == constants.COMPARISON_GT
+
+        value, comparison = utils.get_attribute(
+            obj, 'foo__' + constants.COMPARISON_MONTH + '__' + constants.COMPARISON_GT
+        )
+        assert value == 12
+        assert comparison == constants.COMPARISON_GT
+
+        value, comparison = utils.get_attribute(
+            obj, 'foo__' + constants.COMPARISON_DAY + '__' + constants.COMPARISON_GT
+        )
+        assert value == 31
+        assert comparison == constants.COMPARISON_GT
+
+        value, comparison = utils.get_attribute(
+            obj, 'foo__' + constants.COMPARISON_HOUR + '__' + constants.COMPARISON_GT
+        )
+        assert value == 22
+        assert comparison == constants.COMPARISON_GT
+        value, comparison = utils.get_attribute(
+            obj, 'foo__' + constants.COMPARISON_MINUTE + '__' + constants.COMPARISON_GT
+        )
+        assert value == 45
+        assert comparison == constants.COMPARISON_GT
+        value, comparison = utils.get_attribute(
+            obj, 'foo__' + constants.COMPARISON_SECOND + '__' + constants.COMPARISON_GT
+        )
+        assert value == 59
+        assert comparison == constants.COMPARISON_GT
+
+    def test_get_attribute_returns_tuple_with_exact_as_default_comparison(self):
+        obj = MagicMock(foo=datetime(2017, 1, 1))
+        value, comparison = utils.get_attribute(obj, 'foo__' + constants.COMPARISON_YEAR)
+        assert value == 2017
+        assert comparison == constants.COMPARISON_EXACT
+
+    def test_validate_date_or_datetime_raises_value_error_with_incorrect_numbers(self):
+        with self.assertRaisesRegexp(ValueError, r'13 is incorrect value for month'):
+            utils.validate_date_or_datetime(13, constants.COMPARISON_MONTH)
 
     def test_is_match_equality_check_when_comparison_none(self):
         result = utils.is_match(1, 1)
@@ -210,3 +276,23 @@ class TestUtils(TestCase):
 
         for x in source:
             assert x not in results
+
+    def test_is_match_regex(self):
+        result = utils.is_match('Monty Python 1234', r'M\w+\sPython\s\d+', constants.COMPARISON_REGEX)
+        assert result is True
+
+        result = utils.is_match('Monty Python 1234', r'm\w+\spython\s\d+', constants.COMPARISON_REGEX)
+        assert result is False
+
+        result = utils.is_match('Monty Python 1234', r'm\w+\Holy Grail\s\d+', constants.COMPARISON_REGEX)
+        assert result is False
+
+    def test_is_match_iregex(self):
+        result = utils.is_match('Monty Python 1234', r'M\w+\sPython\s\d+', constants.COMPARISON_IREGEX)
+        assert result is True
+
+        result = utils.is_match('Monty Python 1234', r'm\w+\spython\s\d+', constants.COMPARISON_IREGEX)
+        assert result is True
+
+        result = utils.is_match('Monty Python 1234', r'm\w+\Holy Grail\s\d+', constants.COMPARISON_IREGEX)
+        assert result is False

@@ -1,3 +1,4 @@
+from datetime import datetime, date
 from django.core.exceptions import FieldError
 from mock import Mock
 
@@ -5,6 +6,7 @@ from .constants import *
 from .exceptions import *
 
 import django_mock_queries.query
+import re
 
 
 def merge(first, second):
@@ -50,6 +52,16 @@ def get_attribute(obj, attr, default=None, **kwargs):
     result = obj
     comparison = None
     parts = attr.split('__')
+    if len(parts) > 1 \
+            and (isinstance(getattr(obj, parts[0], None), date) or isinstance(getattr(obj, parts[0], None), datetime)) \
+            and parts[1] in DATETIME_COMPARISONS:
+        value = extract(getattr(obj, parts[0]), parts[1])
+        validate_date_or_datetime(value, parts[1])
+        try:
+            comparison = parts[2]
+        except IndexError:
+            comparison = COMPARISON_EXACT
+        return value, comparison
 
     for nested_field in parts:
         if nested_field in COMPARISONS:
@@ -103,7 +115,29 @@ def is_match(first, second, comparison=None):
         COMPARISON_ENDSWITH: lambda: first.endswith(second),
         COMPARISON_IENDSWITH: lambda: first.lower().endswith(second.lower()),
         COMPARISON_ISNULL: lambda: (first is None) == bool(second),
+        COMPARISON_REGEX: lambda: re.search(second, first) is not None,
+        COMPARISON_IREGEX: lambda: re.search(second, first, flags=re.I) is not None,
     }[comparison]()
+
+
+def extract(obj, comparison):
+    result_dict = None
+    if isinstance(obj, date):
+        result_dict = {
+            COMPARISON_YEAR: obj.year,
+            COMPARISON_MONTH: obj.month,
+            COMPARISON_DAY: obj.day,
+        }
+    if isinstance(obj, datetime):
+        result_dict = {
+            COMPARISON_YEAR: obj.year,
+            COMPARISON_MONTH: obj.month,
+            COMPARISON_DAY: obj.day,
+            COMPARISON_HOUR: obj.hour,
+            COMPARISON_MINUTE: obj.minute,
+            COMPARISON_SECOND: obj.second,
+        }
+    return result_dict[comparison]
 
 
 def convert_to_pks(query):
@@ -131,6 +165,19 @@ def matches(*source, **attrs):
 def validate_mock_set(mock_set):
     if mock_set.model is None:
         raise ModelNotSpecified()
+
+
+def validate_date_or_datetime(value, comparison):
+    mapping = {
+        COMPARISON_YEAR: lambda: True,
+        COMPARISON_MONTH: lambda: MONTH_BOUNDS[0] <= value <= MONTH_BOUNDS[1],
+        COMPARISON_DAY: lambda: DAY_BOUNDS[0] <= value <= DAY_BOUNDS[1],
+        COMPARISON_HOUR: lambda: HOUR_BOUNDS[0] <= value <= HOUR_BOUNDS[1],
+        COMPARISON_MINUTE: lambda: MINUTE_BOUNDS[0] <= value <= MINUTE_BOUNDS[1],
+        COMPARISON_SECOND: lambda: SECOND_BOUNDS[0] <= value <= SECOND_BOUNDS[1],
+    }
+    if not mapping[comparison]():
+        raise ValueError('{} is incorrect value for {}'.format(value, comparison))
 
 
 def is_list_like_iter(obj):
