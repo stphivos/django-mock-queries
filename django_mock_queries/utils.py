@@ -49,19 +49,19 @@ def find_field_names(obj, **kwargs):
 
 
 def get_attribute(obj, attr, default=None, **kwargs):
-    result = obj
-    comparison = None
     parts = attr.split('__')
+
     if len(parts) > 1 \
             and (isinstance(getattr(obj, parts[0], None), date) or isinstance(getattr(obj, parts[0], None), datetime)) \
             and parts[1] in DATETIME_COMPARISONS:
-        value = extract(getattr(obj, parts[0]), parts[1])
-        validate_date_or_datetime(value, parts[1])
-        try:
-            comparison = parts[2]
-        except IndexError:
-            comparison = COMPARISON_EXACT
-        return value, comparison
+        return process_datetime_attribute(obj, parts)
+    else:
+        return process_attribute(obj, parts, default, **kwargs)
+
+
+def process_attribute(obj, parts, default, **kwargs):
+    result = obj
+    comparison = None
 
     for nested_field in parts:
         if nested_field in COMPARISONS:
@@ -89,6 +89,17 @@ def get_attribute(obj, attr, default=None, **kwargs):
                 result = getattr(result, target_field, None)
 
     value = result if result is not None else default
+
+    return value, comparison
+
+
+def process_datetime_attribute(obj, parts):
+    value = extract(getattr(obj, parts[0]), parts[1])
+    validate_date_or_datetime(value, parts[1])
+    try:
+        comparison = parts[2]
+    except IndexError:
+        comparison = COMPARISON_EXACT
     return value, comparison
 
 
