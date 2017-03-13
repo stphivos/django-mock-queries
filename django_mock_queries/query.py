@@ -115,7 +115,7 @@ def MockSet(*initial_items, **kwargs):
             expr_result = None
 
             for x in items:
-                val = get_attribute(x, expr.source_expressions[0].name, related_set_singular=True)[0]
+                val = get_attribute(x, expr.source_expressions[0].name)[0]
                 if val is None:
                     continue
                 values.extend(val if is_list_like_iter(val) else [val])
@@ -246,7 +246,7 @@ def MockSet(*initial_items, **kwargs):
             result_count = 1
 
             for field in sorted(field_names, key=lambda k: k.count('__')):
-                value = get_attribute(item, field, related_set_singular=True)[0]
+                value = get_attribute(item, field)[0]
 
                 if is_list_like_iter(value):
                     value = flatten_list(value)
