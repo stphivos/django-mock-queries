@@ -353,7 +353,7 @@ class MockedRelationsTest(TestCase):
         manufacturer.car_set.add(car)
         Manufacturer.objects.add(manufacturer)
 
-        car_manufacturers = Manufacturer.objects.filter(car_set=car)
+        car_manufacturers = Manufacturer.objects.filter(car=car)
 
         self.assertEqual([manufacturer], list(car_manufacturers))
 

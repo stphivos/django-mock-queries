@@ -21,7 +21,7 @@ def find_field_names(obj, **kwargs):
         name = field.get_accessor_name()
         model_name = field.related_model._meta.model_name.lower()
 
-        if kwargs.get('related_set_singular', False) and name[-4:] == '_set':
+        if name[-4:] == '_set':
             return {model_name: name}
         else:
             return {name: name}
