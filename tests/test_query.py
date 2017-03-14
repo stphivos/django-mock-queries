@@ -741,3 +741,7 @@ class TestQuery(TestCase):
     def test_create_model_raises_value_error_with_zero_arguments(self):
         with self.assertRaises(ValueError):
             create_model()
+
+    def test_query_model_repr_returns_mock_name(self):
+        model = MockModel(mock_name='model_name')
+        assert repr(model) == model.mock_name

@@ -1,0 +1,2 @@
+include setup.cfg README.md requirements/requirements.txt
+recursive-include django_mock_queries *.py
