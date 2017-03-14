@@ -8,4 +8,4 @@ dist/
 *migrations/
 MANIFEST
 patches.py
-/examples/users/db.sqlite3
+db.sqlite3

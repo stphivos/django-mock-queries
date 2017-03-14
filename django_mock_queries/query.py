@@ -320,6 +320,9 @@ class MockModel(dict):
         keys_list.remove('save')
         return MockOptions(*keys_list)
 
+    def __repr__(self):
+        return self.get('mock_name', None) or super(MockModel, self).__repr__()
+
 
 def create_model(*fields):
     if len(fields) == 0:
