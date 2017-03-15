@@ -7,6 +7,6 @@
 Django>=1.8.17,<1.10.99   # manually edited and should remain a range of supported versions
 funcsigs==1.0.2           # via mock
 mock==1.3.0
-model_mommy==1.2.6
+model_mommy==1.3.2
 pbr==2.0.0                # via mock
 six==1.10.0               # via mock, model_mommy
