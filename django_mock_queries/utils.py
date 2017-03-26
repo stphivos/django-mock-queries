@@ -119,6 +119,7 @@ def is_match(first, second, comparison=None):
         COMPARISON_ISNULL: lambda: (first is None) == bool(second),
         COMPARISON_REGEX: lambda: re.search(second, first) is not None,
         COMPARISON_IREGEX: lambda: re.search(second, first, flags=re.I) is not None,
+        COMPARISON_RANGE: lambda: second[0] <= first <= second[1]
     }[comparison]()
 
 
@@ -126,15 +127,19 @@ def extract(obj, comparison):
     result_dict = None
     if isinstance(obj, date):
         result_dict = {
+            COMPARISON_DATE: obj,
             COMPARISON_YEAR: obj.year,
             COMPARISON_MONTH: obj.month,
             COMPARISON_DAY: obj.day,
+            COMPARISON_WEEK_DAY: (obj.weekday() + 1) % 7 + 1,
         }
     if isinstance(obj, datetime):
         result_dict = {
+            COMPARISON_DATE: obj.date(),
             COMPARISON_YEAR: obj.year,
             COMPARISON_MONTH: obj.month,
             COMPARISON_DAY: obj.day,
+            COMPARISON_WEEK_DAY: (obj.weekday() + 1) % 7 + 1,
             COMPARISON_HOUR: obj.hour,
             COMPARISON_MINUTE: obj.minute,
             COMPARISON_SECOND: obj.second,
@@ -174,6 +179,7 @@ def validate_date_or_datetime(value, comparison):
         COMPARISON_YEAR: lambda: True,
         COMPARISON_MONTH: lambda: MONTH_BOUNDS[0] <= value <= MONTH_BOUNDS[1],
         COMPARISON_DAY: lambda: DAY_BOUNDS[0] <= value <= DAY_BOUNDS[1],
+        COMPARISON_WEEK_DAY: lambda: WEEK_DAY_BOUNDS[0] <= value <= WEEK_DAY_BOUNDS[1],
         COMPARISON_HOUR: lambda: HOUR_BOUNDS[0] <= value <= HOUR_BOUNDS[1],
         COMPARISON_MINUTE: lambda: MINUTE_BOUNDS[0] <= value <= MINUTE_BOUNDS[1],
         COMPARISON_SECOND: lambda: SECOND_BOUNDS[0] <= value <= SECOND_BOUNDS[1],
