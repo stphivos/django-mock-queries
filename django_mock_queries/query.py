@@ -311,7 +311,8 @@ def MockSet(*initial_items, **kwargs):
 
     mock_set.dates = MagicMock(side_effect=dates)
 
-    def datetimes(field, kind, order='ASC', tzinfo=None):
+    def datetimes(field, kind, order='ASC'):
+        # TODO: Handle `tzinfo` parameter
         assert kind in ("year", "month", "day", "hour", "minute", "second"), \
             "'kind' must be one of 'year', 'month', 'day', 'hour', 'minute' or 'second'."
         assert order in ('ASC', 'DESC'), "'order' must be either 'ASC' or 'DESC'."
