@@ -257,3 +257,38 @@ class TestUtils(TestCase):
     def test_is_match_processes_date_field(self):
         result = utils.is_match(date(2017, 1, 1), 2016, (constants.COMPARISON_YEAR, constants.COMPARISON_GT))
         assert result is True
+
+    def test_is_match_range_date_and_datetime(self):
+        result = utils.is_match(date(2017, 1, 1), (date(2017, 1, 1), date(2017, 1, 2)), constants.COMPARISON_RANGE)
+        assert result is True
+
+        result = utils.is_match(
+            datetime(2017, 1, 1, 0, 0, 0),
+            (datetime(2017, 1, 1, 0, 0, 0), datetime(2017, 1, 1, 0, 0, 1)),
+            constants.COMPARISON_RANGE
+        )
+        assert result is True
+
+        result = utils.is_match(date(2017, 1, 1), (date(2017, 1, 2), date(2017, 1, 3)), constants.COMPARISON_RANGE)
+        assert result is False
+
+        result = utils.is_match(
+            datetime(2015, 1, 1, 0, 0, 0),
+            (datetime(2015, 1, 1, 0, 0, 1), datetime(2015, 1, 1, 0, 0, 2)),
+            constants.COMPARISON_RANGE
+        )
+        assert result is False
+
+    def test_is_match_range_numeric(self):
+        result = utils.is_match(2, (2, 3), constants.COMPARISON_RANGE)
+        assert result is True
+
+        result = utils.is_match(1, (2, 3), constants.COMPARISON_RANGE)
+        assert result is False
+
+    def test_is_match_range_string(self):
+        result = utils.is_match('b', ('b', 'c'), constants.COMPARISON_RANGE)
+        assert result is True
+
+        result = utils.is_match('a', ('b', 'c'), constants.COMPARISON_RANGE)
+        assert result is False

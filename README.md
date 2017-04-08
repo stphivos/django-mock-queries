@@ -219,6 +219,6 @@ $ git push -u origin HEAD
 
     * Methods that do not return QuerySets: update_or_create, bulk_create, in_bulk, update, delete, as_manager
 
-    * Field lookups: range, date, week_day, search
+    * Field lookups: search
 
     * Aggregation functions: StdDev, Variance
