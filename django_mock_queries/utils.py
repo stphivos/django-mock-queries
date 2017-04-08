@@ -201,3 +201,23 @@ def flatten_list(source):
         else:
             target.extend(flatten_list(x))
     return target
+
+
+def truncate(obj, kind):
+    trunc_mapping = None
+    if isinstance(obj, date):
+        trunc_mapping = {
+            'year': obj.replace(month=1, day=1),
+            'month': obj.replace(day=1),
+            'day': obj
+        }
+    if isinstance(obj, datetime):
+        trunc_mapping = {
+            'year': obj.replace(month=1, day=1, hour=0, minute=0, second=0),
+            'month': obj.replace(day=1, hour=0, minute=0, second=0),
+            'day': obj.replace(hour=0, minute=0, second=0),
+            'hour': obj.replace(minute=0, second=0),
+            'minute': obj.replace(second=0),
+            'second': obj
+        }
+    return trunc_mapping[kind]

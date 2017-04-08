@@ -1,3 +1,5 @@
+import datetime
+
 from mock import MagicMock, ANY
 from unittest import TestCase
 
@@ -745,3 +747,190 @@ class TestQuery(TestCase):
     def test_query_model_repr_returns_mock_name(self):
         model = MockModel(mock_name='model_name')
         assert repr(model) == model.mock_name
+
+    def test_query_dates_year(self):
+        qs = MockSet(model=create_model('date_begin'))
+
+        item1 = MockModel(date_begin=datetime.date(2017, 1, 2))
+        item2 = MockModel(date_begin=datetime.date(2017, 3, 12))
+        item3 = MockModel(date_begin=datetime.date(2016, 3, 4))
+
+        qs.add(item1, item2, item3)
+
+        result = qs.dates('date_begin', 'year', 'ASC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.date(2016, 1, 1)
+        assert result[1] == datetime.date(2017, 1, 1)
+
+        result = qs.dates('date_begin', 'year', 'DESC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.date(2017, 1, 1)
+        assert result[1] == datetime.date(2016, 1, 1)
+
+    def test_query_dates_month(self):
+        qs = MockSet(model=create_model('date_begin'))
+
+        item1 = MockModel(date_begin=datetime.date(2017, 1, 2))
+        item2 = MockModel(date_begin=datetime.date(2017, 1, 19))
+        item3 = MockModel(date_begin=datetime.date(2017, 2, 4))
+        qs.add(item1, item2, item3)
+
+        result = qs.dates('date_begin', 'month', 'ASC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.date(2017, 1, 1)
+        assert result[1] == datetime.date(2017, 2, 1)
+
+        result = qs.dates('date_begin', 'month', 'DESC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.date(2017, 2, 1)
+        assert result[1] == datetime.date(2017, 1, 1)
+
+    def test_query_dates_day(self):
+        qs = MockSet(model=create_model('date_begin'))
+
+        item1 = MockModel(date_begin=datetime.date(2017, 1, 2))
+        item2 = MockModel(date_begin=datetime.date(2017, 2, 14))
+        item3 = MockModel(date_begin=datetime.date(2017, 2, 14))
+
+        qs.add(item1, item2, item3)
+
+        result = qs.dates('date_begin', 'day', 'ASC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.date(2017, 1, 2)
+        assert result[1] == datetime.date(2017, 2, 14)
+
+        result = qs.dates('date_begin', 'day', 'DESC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.date(2017, 2, 14)
+        assert result[1] == datetime.date(2017, 1, 2)
+
+    def test_query_datetimes_year(self):
+        qs = MockSet(model=create_model('date_begin'))
+
+        item1 = MockModel(date_begin=datetime.datetime(2017, 1, 2, 1, 2, 3))
+        item2 = MockModel(date_begin=datetime.datetime(2017, 3, 12, 4, 5, 6))
+        item3 = MockModel(date_begin=datetime.datetime(2016, 3, 4, 7, 8, 9))
+
+        qs.add(item1, item2, item3)
+
+        result = qs.datetimes('date_begin', 'year', 'ASC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.datetime(2016, 1, 1, 0, 0, 0)
+        assert result[1] == datetime.datetime(2017, 1, 1, 0, 0, 0)
+
+        result = qs.datetimes('date_begin', 'year', 'DESC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.datetime(2017, 1, 1, 0, 0, 0)
+        assert result[1] == datetime.datetime(2016, 1, 1, 0, 0, 0)
+
+    def test_query_datetimes_month(self):
+        qs = MockSet(model=create_model('date_begin'))
+
+        item1 = MockModel(date_begin=datetime.datetime(2017, 1, 2, 1, 2, 3))
+        item2 = MockModel(date_begin=datetime.datetime(2017, 1, 19, 4, 5, 6))
+        item3 = MockModel(date_begin=datetime.datetime(2017, 2, 4, 7, 8, 9))
+        qs.add(item1, item2, item3)
+
+        result = qs.datetimes('date_begin', 'month', 'ASC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.datetime(2017, 1, 1, 0, 0, 0)
+        assert result[1] == datetime.datetime(2017, 2, 1, 0, 0, 0)
+
+        result = qs.datetimes('date_begin', 'month', 'DESC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.datetime(2017, 2, 1, 0, 0, 0)
+        assert result[1] == datetime.datetime(2017, 1, 1, 0, 0, 0)
+
+    def test_query_datetimes_day(self):
+        qs = MockSet(model=create_model('date_begin'))
+
+        item1 = MockModel(date_begin=datetime.datetime(2017, 1, 2, 1, 2, 3))
+        item2 = MockModel(date_begin=datetime.datetime(2017, 2, 14, 4, 5, 6))
+        item3 = MockModel(date_begin=datetime.datetime(2017, 2, 14, 7, 8, 9))
+
+        qs.add(item1, item2, item3)
+
+        result = qs.datetimes('date_begin', 'day', 'ASC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.datetime(2017, 1, 2, 0, 0, 0)
+        assert result[1] == datetime.datetime(2017, 2, 14, 0, 0, 0)
+
+        result = qs.datetimes('date_begin', 'day', 'DESC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.datetime(2017, 2, 14, 0, 0, 0)
+        assert result[1] == datetime.datetime(2017, 1, 2, 0, 0, 0)
+
+    def test_query_datetimes_hour(self):
+        qs = MockSet(model=create_model('date_begin'))
+
+        item1 = MockModel(date_begin=datetime.datetime(2017, 1, 10, 1, 2, 3))
+        item2 = MockModel(date_begin=datetime.datetime(2017, 1, 10, 1, 5, 6))
+        item3 = MockModel(date_begin=datetime.datetime(2017, 1, 10, 2, 8, 9))
+
+        qs.add(item1, item2, item3)
+
+        result = qs.datetimes('date_begin', 'hour', 'ASC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.datetime(2017, 1, 10, 1, 0, 0)
+        assert result[1] == datetime.datetime(2017, 1, 10, 2, 0, 0)
+
+        result = qs.datetimes('date_begin', 'hour', 'DESC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.datetime(2017, 1, 10, 2, 0, 0)
+        assert result[1] == datetime.datetime(2017, 1, 10, 1, 0, 0)
+
+    def test_query_datetimes_minute(self):
+        qs = MockSet(model=create_model('date_begin'))
+
+        item1 = MockModel(date_begin=datetime.datetime(2017, 1, 10, 1, 2, 3))
+        item2 = MockModel(date_begin=datetime.datetime(2017, 1, 10, 1, 2, 6))
+        item3 = MockModel(date_begin=datetime.datetime(2017, 1, 10, 1, 3, 9))
+
+        qs.add(item1, item2, item3)
+
+        result = qs.datetimes('date_begin', 'minute', 'ASC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.datetime(2017, 1, 10, 1, 2, 0)
+        assert result[1] == datetime.datetime(2017, 1, 10, 1, 3, 0)
+
+        result = qs.datetimes('date_begin', 'minute', 'DESC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.datetime(2017, 1, 10, 1, 3, 0)
+        assert result[1] == datetime.datetime(2017, 1, 10, 1, 2, 0)
+
+    def test_query_datetimes_second(self):
+        qs = MockSet(model=create_model('date_begin'))
+
+        item1 = MockModel(date_begin=datetime.datetime(2017, 1, 10, 1, 2, 3))
+        item2 = MockModel(date_begin=datetime.datetime(2017, 1, 10, 1, 2, 3))
+        item3 = MockModel(date_begin=datetime.datetime(2017, 1, 10, 1, 2, 9))
+
+        qs.add(item1, item2, item3)
+
+        result = qs.datetimes('date_begin', 'second', 'ASC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.datetime(2017, 1, 10, 1, 2, 3)
+        assert result[1] == datetime.datetime(2017, 1, 10, 1, 2, 9)
+
+        result = qs.datetimes('date_begin', 'second', 'DESC')
+
+        assert len(result) == 2
+        assert result[0] == datetime.datetime(2017, 1, 10, 1, 2, 9)
+        assert result[1] == datetime.datetime(2017, 1, 10, 1, 2, 3)
