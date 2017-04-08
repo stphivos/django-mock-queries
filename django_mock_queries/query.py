@@ -1,9 +1,12 @@
+import datetime
 from mock import Mock, MagicMock, PropertyMock
 from operator import attrgetter
 
 from .constants import *
 from .exceptions import *
-from .utils import matches, merge, intersect, get_attribute, validate_mock_set, is_list_like_iter, flatten_list
+from .utils import (
+    matches, merge, intersect, get_attribute, validate_mock_set, is_list_like_iter, flatten_list, truncate
+)
 
 
 class MockBase(MagicMock):
@@ -293,6 +296,36 @@ def MockSet(*initial_items, **kwargs):
         return MockSet(*result, clone=mock_set)
 
     mock_set.values_list = MagicMock(side_effect=values_list)
+
+    def dates(field, kind, order='ASC'):
+        assert kind in ("year", "month", "day"), "'kind' must be one of 'year', 'month' or 'day'."
+        assert order in ('ASC', 'DESC'), "'order' must be either 'ASC' or 'DESC'."
+
+        initial_values = list(values_list(field, flat=True))
+
+        return MockSet(*sorted(
+            {truncate(x, kind) for x in initial_values},
+            key=lambda y: datetime.date.timetuple(y)[:3],
+            reverse=True if order == 'DESC' else False
+        ), clone=mock_set)
+
+    mock_set.dates = MagicMock(side_effect=dates)
+
+    def datetimes(field, kind, order='ASC'):
+        # TODO: Handle `tzinfo` parameter
+        assert kind in ("year", "month", "day", "hour", "minute", "second"), \
+            "'kind' must be one of 'year', 'month', 'day', 'hour', 'minute' or 'second'."
+        assert order in ('ASC', 'DESC'), "'order' must be either 'ASC' or 'DESC'."
+
+        initial_values = list(values_list(field, flat=True))
+
+        return MockSet(*sorted(
+            {truncate(x, kind) for x in initial_values},
+            key=lambda y: datetime.datetime.timetuple(y)[:6],
+            reverse=True if order == 'DESC' else False
+        ), clone=mock_set)
+
+    mock_set.datetimes = MagicMock(side_effect=datetimes)
 
     return mock_set
 
