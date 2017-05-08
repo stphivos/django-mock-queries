@@ -58,8 +58,11 @@ def MockSet(*initial_items, **kwargs):
     def filter_q(source, query):
         results = []
 
-        for exp in query.children:
-            filtered = list(matches(*source, **{exp[0]: exp[1]}))
+        for child in query.children:
+            if isinstance(child, DjangoQ):
+                filtered = filter_q(source, child)
+            else:
+                filtered = list(matches(negated=query.negated, *source, **{child[0]: child[1]}))
 
             if not results:
                 results = filtered

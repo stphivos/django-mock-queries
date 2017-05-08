@@ -76,6 +76,18 @@ class TestQuery(TestCase):
         assert item_2 in results
         assert item_3 not in results
 
+    def test_query_filters_items_by_q_object_with_negation(self):
+        item_1 = MockModel(mock_name='#1', foo=1, bar='a')
+        item_2 = MockModel(mock_name='#2', foo=1, bar='b')
+        item_3 = MockModel(mock_name='#3', foo=3, bar='b')
+
+        self.mock_set.add(item_1, item_2, item_3)
+        results = list(self.mock_set.filter(~Q(foo=1) | Q(bar='a')))
+
+        assert item_1 in results
+        assert item_2 not in results
+        assert item_3 in results
+
     def test_query_filters_items_by_unsupported_object(self):
         bogus_filter = 'This is not a filter.'
 
