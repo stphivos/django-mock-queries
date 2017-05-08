@@ -158,12 +158,17 @@ def is_match_in_children(comparison, first, second):
 
 def matches(*source, **attrs):
     exclude = []
+    negated = attrs.pop('negated', False)
+
     for x in source:
         for attr_name, filter_value in attrs.items():
             attr_value, comparison = get_attribute(x, attr_name)
-            if not is_match(attr_value, filter_value, comparison):
+            match = is_match(attr_value, filter_value, comparison)
+
+            if (match and negated) or (not match and not negated):
                 exclude.append(x)
                 break
+
     for x in source:
         if x not in exclude:
             yield x
