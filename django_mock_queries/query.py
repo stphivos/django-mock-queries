@@ -5,7 +5,8 @@ from operator import attrgetter
 from .constants import *
 from .exceptions import *
 from .utils import (
-    matches, merge, intersect, get_attribute, validate_mock_set, is_list_like_iter, flatten_list, truncate
+    matches, merge, intersect, get_attribute, validate_mock_set, is_list_like_iter, flatten_list, truncate,
+    find_field_names
 )
 
 
@@ -200,15 +201,22 @@ def MockSet(*initial_items, **kwargs):
 
     def create(**attrs):
         validate_mock_set(mock_set)
+
+        lookup_fields, target_fields = find_field_names(mock_set.model)
+
         for k in attrs.keys():
-            if k not in [f.attname for f in mock_set.model._meta.concrete_fields]:
+            if k not in target_fields:
                 raise ValueError('{} is an invalid keyword argument for this function'.format(k))
-        for field in mock_set.model._meta.concrete_fields:
-            if field.attname not in attrs.keys():
-                attrs[field.attname] = None
+
+        # TODO: Determine the default value for each field and set it to that so django doesn't complain
+        # for field in target_fields:
+        #     if field not in attrs.keys():
+        #         attrs[field] = None
+
         obj = mock_set.model(**attrs)
         obj.save(force_insert=True, using=MagicMock())
         add(obj)
+
         return obj
 
     mock_set.create = MagicMock(side_effect=create)

@@ -274,14 +274,14 @@ class PatcherChainOnClassTest(TestCase):
 
 class MockedRelationsTest(TestCase):
     @mocked_relations(Manufacturer)
-    def test_decorator(self):
+    def test_mocked_relations_decorator(self):
         m = Manufacturer()
 
         self.assertEqual(0, m.car_set.count())
         m.car_set.add(Car())
         self.assertEqual(1, m.car_set.count())
 
-    def test_context_manager(self):
+    def test_mocked_relations_context_manager(self):
         m = Manufacturer()
 
         with mocked_relations(Manufacturer):
@@ -289,7 +289,7 @@ class MockedRelationsTest(TestCase):
             m.car_set.add(Car())
             self.assertEqual(1, m.car_set.count())
 
-    def test_reusing_patcher(self):
+    def test_mocked_relations_reusing_patcher(self):
         patcher = mocked_relations(Manufacturer)
         with patcher:
             self.assertEqual(0, Manufacturer.objects.count())
@@ -302,7 +302,7 @@ class MockedRelationsTest(TestCase):
             self.assertEqual(1, Manufacturer.objects.count())
 
     @mocked_relations(Manufacturer)
-    def test_relation_with_garbage_collection(self):
+    def test_mocked_relations_with_garbage_collection(self):
         self.longMessage = True
         for group_index in range(10):
             m = Manufacturer()
@@ -313,7 +313,7 @@ class MockedRelationsTest(TestCase):
             self.assertEqual(1, m.car_set.count())
             del m
 
-    def test_replaces_other_mocks(self):
+    def test_mocked_relations_replaces_other_mocks(self):
         original_type = type(Manufacturer.car_set)
         self.assertIsInstance(Manufacturer.car_set, original_type)
 
@@ -323,13 +323,13 @@ class MockedRelationsTest(TestCase):
         self.assertIsInstance(Manufacturer.car_set, original_type)
 
     @mocked_relations(Sedan)
-    def test_parent(self):
+    def test_mocked_relations_parent(self):
         sedan = Sedan(speed=95)
 
         self.assertEqual(0, sedan.passengers.count())
 
     @mocked_relations(Sedan)
-    def test_mock_twice(self):
+    def test_mocked_relations_mock_twice(self):
         """ Don't reset the mocking if a class is mocked twice.
 
         Could happen where Sedan is mocked on the class, and Car (the base
@@ -342,12 +342,12 @@ class MockedRelationsTest(TestCase):
             self.assertEqual(1, Car.objects.count())
 
     @mocked_relations(Manufacturer)
-    def test_raises_specific_error(self):
+    def test_mocked_relations_raises_specific_error(self):
         with self.assertRaises(Manufacturer.DoesNotExist):
             Manufacturer.objects.get(name='sam')
 
     @mocked_relations(Manufacturer, Car)
-    def test_is_match_in_children(self):
+    def test_mocked_relations_is_match_in_children(self):
         car = Car()
         manufacturer = Manufacturer()
         manufacturer.car_set.add(car)
@@ -356,6 +356,11 @@ class MockedRelationsTest(TestCase):
         car_manufacturers = Manufacturer.objects.filter(car=car)
 
         self.assertEqual([manufacturer], list(car_manufacturers))
+
+    @mocked_relations(Manufacturer, Car)
+    def test_mocked_relations_create_foreign_key_with_kwargs(self):
+        make = Manufacturer.objects.create(name='foo')
+        Car.objects.create(make=make)
 
 
 class TestMockers(TestCase):
