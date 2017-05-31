@@ -360,7 +360,7 @@ class MockedRelationsTest(TestCase):
     @mocked_relations(Manufacturer, Car)
     def test_mocked_relations_create_foreign_key_with_kwargs(self):
         make = Manufacturer.objects.create(name='foo')
-        _ = Car.objects.create(make=make)
+        Car.objects.create(make=make)
 
 
 class TestMockers(TestCase):
