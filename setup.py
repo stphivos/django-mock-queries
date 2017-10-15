@@ -7,7 +7,7 @@ req = [str(ir.req) for ir in install_req]
 setup(
     name='django_mock_queries',
     packages=['django_mock_queries'],
-    version='0.0.16.5',
+    version='1.0.0',
     description='A django library for mocking queryset functions in memory for testing',
     author='Phivos Stylianides',
     author_email='stphivos@gmail.com',
