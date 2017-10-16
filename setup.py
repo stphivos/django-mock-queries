@@ -1,13 +1,13 @@
 from distutils.core import setup
 from pip.req import parse_requirements
 
-install_req = parse_requirements('requirements/requirements.txt', session='skip')
+install_req = parse_requirements('requirements/core.txt', session='skip')
 req = [str(ir.req) for ir in install_req]
 
 setup(
     name='django_mock_queries',
     packages=['django_mock_queries'],
-    version='1.0.0',
+    version='1.0.2',
     description='A django library for mocking queryset functions in memory for testing',
     author='Phivos Stylianides',
     author_email='stphivos@gmail.com',
