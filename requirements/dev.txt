@@ -1,6 +1,3 @@
-# -r requirements.txt
-
-pip-tools==1.7.0
 pytest==3.0.3
 pytest-cov==2.4.0
 pytest-flake8==0.7
