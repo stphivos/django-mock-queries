@@ -148,7 +148,10 @@ def extract(obj, comparison):
 
 
 def convert_to_pks(query):
-    return [item.pk for item in query]
+    try:
+        return [item.pk for item in query]
+    except AttributeError:
+        return query  # Didn't have pk's, keep original items
 
 
 def is_match_in_children(comparison, first, second):
