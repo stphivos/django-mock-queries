@@ -167,7 +167,11 @@ def MockSet(*initial_items, **kwargs):
         does_not_exist = getattr(mock_set.model, 'DoesNotExist', ObjectDoesNotExist)
         raise does_not_exist()
 
-    def latest(field):
+    def latest(field=None):
+        if field is None:
+            field = mock_set.model._meta.get_latest_by
+        assert bool(field), "AssertionError: earliest() and latest() require either a "\
+            "field_name parameter or 'get_latest_by' in the model"
         results = sorted(items, key=attrgetter(field), reverse=True)
         if len(results) == 0:
             raise_does_not_exist()
@@ -175,7 +179,11 @@ def MockSet(*initial_items, **kwargs):
 
     mock_set.latest = MagicMock(side_effect=latest)
 
-    def earliest(field):
+    def earliest(field=None):
+       if field is None:
+            field = mock_set.model._meta.get_latest_by
+        assert bool(field), "AssertionError: earliest() and latest() require either a "\
+            "field_name parameter or 'get_latest_by' in the model"
         results = sorted(items, key=attrgetter(field))
         if len(results) == 0:
             raise_does_not_exist()
