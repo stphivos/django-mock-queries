@@ -1,5 +1,4 @@
 from distutils.core import setup
-from os import environ
 from pip.req import parse_requirements
 
 install_req = parse_requirements('requirements/core.txt', session='skip')
@@ -11,10 +10,7 @@ def read_md(filename):
         from pypandoc import convert_file
         return convert_file(filename, 'rst')
     except (ImportError, OSError):
-        if environ.get('CI', False):
-            return open(filename).read()
-        else:
-            raise
+        return open(filename).read()
 
 
 setup(
