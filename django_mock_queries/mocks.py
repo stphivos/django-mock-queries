@@ -371,7 +371,7 @@ class ModelMocker(Mocker):
 
     def __init__(self, cls, *methods):
         super(ModelMocker, self).__init__(cls, *(self.default_methods + methods))
-        self.qs = MockSet()
+        self.qs = MockSet(model=cls)
 
     def objects(self):
         return self.qs
