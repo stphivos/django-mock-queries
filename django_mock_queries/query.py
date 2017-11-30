@@ -1,6 +1,6 @@
 import datetime
+from cached_property import cached_property
 from mock import Mock, MagicMock, PropertyMock
-from operator import attrgetter
 
 from .constants import *
 from .exceptions import *
@@ -167,21 +167,48 @@ def MockSet(*initial_items, **kwargs):
         does_not_exist = getattr(mock_set.model, 'DoesNotExist', ObjectDoesNotExist)
         raise does_not_exist()
 
-    def latest(field):
-        results = sorted(items, key=attrgetter(field), reverse=True)
+    def _earliest_or_latest(*fields, **field_kwargs):
+        """
+        Mimic Django's behavior
+        https://github.com/django/django/blob/746caf3ef821dbf7588797cb2600fa81b9df9d1d/django/db/models/query.py#L560
+        """
+        field_name = field_kwargs.get('field_name', None)
+        reverse = field_kwargs.get('reverse', False)
+
+        if fields and field_name is not None:
+            raise ValueError('Cannot use both positional arguments and the field_name keyword argument.')
+
+        if field_name is not None:
+            # The field_name keyword argument is deprecated in favor of passing positional arguments.
+            order_fields = (field_name,)
+        elif fields:
+            order_fields = fields
+        else:
+            order_fields = mock_set.model._meta.get_latest_by
+            if order_fields and not isinstance(order_fields, (tuple, list)):
+                order_fields = (order_fields,)
+
+        if order_fields is None:
+            raise ValueError(
+                "earliest() and latest() require either fields as positional "
+                "arguments or 'get_latest_by' in the model's Meta."
+            )
+
+        results = sorted(items, key=lambda obj: tuple(get_attribute(obj, key) for key in order_fields), reverse=reverse)
         if len(results) == 0:
             raise_does_not_exist()
+
         return results[0]
 
-    mock_set.latest = MagicMock(side_effect=latest)
-
-    def earliest(field):
-        results = sorted(items, key=attrgetter(field))
-        if len(results) == 0:
-            raise_does_not_exist()
-        return results[0]
+    def earliest(*fields, **field_kwargs):
+        return _earliest_or_latest(*fields, **field_kwargs)
 
     mock_set.earliest = MagicMock(side_effect=earliest)
+
+    def latest(*fields, **field_kwargs):
+        return _earliest_or_latest(*fields, reverse=True, **field_kwargs)
+
+    mock_set.latest = MagicMock(side_effect=latest)
 
     def first():
         for item in items:
@@ -358,7 +385,7 @@ class MockModel(dict):
     def __call__(self, *args, **kwargs):
         return MockModel(*args, **kwargs)
 
-    @property
+    @cached_property
     def _meta(self):
         keys_list = list(self.keys())
         keys_list.remove('save')
@@ -376,6 +403,10 @@ def create_model(*fields):
 
 class MockOptions(object):
     def __init__(self, *field_names):
+        self.load_fields(*field_names)
+        self.get_latest_by = None
+
+    def load_fields(self, *field_names):
         fields = {name: MockField(name) for name in field_names}
 
         for key in ('_forward_fields_map', 'parents', 'fields_map'):
