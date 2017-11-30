@@ -137,7 +137,7 @@ class TestQuery(TestCase):
 
         assert results == [item_2]
 
-    def test_convert_to_pks(self):
+    def test_query_convert_to_pks(self):
         car1 = Car(id=101)
         car2 = Car(id=102)
         car3 = Car(id=103)
@@ -149,7 +149,7 @@ class TestQuery(TestCase):
 
         self.assertEqual(list(old_cars), list(matches))
 
-    def test_convert_values_list_to_pks(self):
+    def test_query_convert_values_list_to_pks(self):
         car1 = Car(id=101)
         car2 = Car(id=102)
         car3 = Car(id=103)
@@ -400,16 +400,6 @@ class TestQuery(TestCase):
 
         assert len(result) == 15
 
-    def test_query_latest_returns_the_last_element_from_ordered_set(self):
-        item_1 = MockModel(foo=1)
-        item_2 = MockModel(foo=2)
-        item_3 = MockModel(foo=3)
-
-        self.mock_set.add(item_3, item_1, item_2)
-        latest = self.mock_set.latest('foo')
-
-        assert latest == item_3
-
     def test_query_first_none(self):
         first = self.mock_set.first()
 
@@ -439,6 +429,55 @@ class TestQuery(TestCase):
         last = self.mock_set.last()
 
         assert last == item_2, last
+
+    def test_query_latest_returns_the_last_element_from_ordered_set_using_fields_args(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+        item_3 = MockModel(foo=3)
+
+        self.mock_set.add(item_3, item_1, item_2)
+        latest = self.mock_set.latest('foo')
+
+        assert latest == item_3
+
+    def test_query_latest_returns_the_last_element_from_ordered_set_using_field_name_kwarg(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+        item_3 = MockModel(foo=3)
+
+        self.mock_set.add(item_3, item_1, item_2)
+        latest = self.mock_set.latest(field_name='foo')
+
+        assert latest == item_3
+
+    def test_query_latest_returns_the_last_element_from_ordered_set_using_meta_get_latest_by(self):
+        item_1 = MagicMock(foo=1)
+        item_2 = MagicMock(foo=2)
+        item_3 = MagicMock(foo=3)
+
+        objects = MockSet(item_3, item_1, item_2, model=MockModel())
+        objects.model._meta.get_latest_by = 'foo'
+        latest = objects.latest()
+
+        assert latest == item_3
+
+    def test_query_latest_raises_error_when_both_fields_args_and_field_name_kwarg_supplied(self):
+        item_1 = MockModel(foo=1, bar='a')
+        item_2 = MockModel(foo=2, bar='b')
+        item_3 = MockModel(foo=3, bar='c')
+
+        self.mock_set.add(item_3, item_1, item_2)
+
+        self.assertRaises(ValueError, self.mock_set.latest, 'foo', field_name='bar')
+
+    def test_query_latest_raises_error_when_no_fields_supplied(self):
+        item_1 = MagicMock(foo=1)
+        item_2 = MagicMock(foo=2)
+        item_3 = MagicMock(foo=3)
+
+        objects = MockSet(item_3, item_1, item_2, model=MockModel())
+
+        self.assertRaises(ValueError, objects.latest)
 
     def test_query_latest_raises_error_exist_when_empty_set(self):
         self.mock_set.clear()
@@ -541,7 +580,7 @@ class TestQuery(TestCase):
         self.mock_set = MockSet(item_1, item_2, item_3, model=Car)
         self.assertRaises(Car.DoesNotExist, self.mock_set.get, model='clowncar')
 
-    def test_filter_keeps_class(self):
+    def test_query_filter_keeps_class(self):
         item_1 = Car(model='battle')
         item_2 = Car(model='pious')
         item_3 = Car(model='hummus')
@@ -751,21 +790,21 @@ class TestQuery(TestCase):
             assert {'name': make.name, 'car__model': golf.model, 'car__variations__color': golf_white.color} in data
             assert {'name': make.name, 'car__model': golf.model, 'car__variations__color': golf_black.color} in data
 
-    def test_length1(self):
+    def test_query_length1(self):
         q = MockSet(MockModel())
 
         n = len(q)
 
         self.assertEqual(1, n)
 
-    def test_length2(self):
+    def test_query_length2(self):
         q = MockSet(MockModel(), MockModel())
 
         n = len(q)
 
         self.assertEqual(2, n)
 
-    def test_create_model_raises_value_error_with_zero_arguments(self):
+    def test_query_create_model_raises_value_error_with_zero_arguments(self):
         with self.assertRaises(ValueError):
             create_model()
 
