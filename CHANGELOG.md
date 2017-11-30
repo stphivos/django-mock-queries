@@ -1,5 +1,8 @@
 # Change Log
 
+## [v1.0.5](https://github.com/stphivos/django-mock-queries/tree/v1.0.5) (2017-11-30)
+[Full Changelog](https://github.com/stphivos/django-mock-queries/compare/v1.0.4...v1.0.5)
+
 ## [v1.0.4](https://github.com/stphivos/django-mock-queries/tree/v1.0.4) (2017-11-30)
 [Full Changelog](https://github.com/stphivos/django-mock-queries/compare/v1.0.2...v1.0.4)
 
