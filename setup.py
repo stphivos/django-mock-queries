@@ -10,7 +10,7 @@ def read_md(filename):
     try:
         from pypandoc import convert_file
         return convert_file(filename, 'rst')
-    except ImportError:
+    except (ImportError, OSError):
         if environ.get('CI', False):
             return open(filename).read()
         else:
