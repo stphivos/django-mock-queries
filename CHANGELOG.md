@@ -1,5 +1,43 @@
 # Change Log
 
+## [v1.0.4](https://github.com/stphivos/django-mock-queries/tree/v1.0.4) (2017-11-30)
+[Full Changelog](https://github.com/stphivos/django-mock-queries/compare/v1.0.2...v1.0.4)
+
+**Fixed bugs:**
+
+- Support filtering on a values list subquery. [\#54](https://github.com/stphivos/django-mock-queries/pull/54) ([donkirkby](https://github.com/donkirkby))
+
+**Merged pull requests:**
+
+- MockSet earliest/latest fields args [\#57](https://github.com/stphivos/django-mock-queries/pull/57) ([stphivos](https://github.com/stphivos))
+- Not obligatory field parameter in latest and earliest query function [\#56](https://github.com/stphivos/django-mock-queries/pull/56) ([grabekm90](https://github.com/grabekm90))
+- Fix a missed model parameter for MockSet in ModelMocker [\#55](https://github.com/stphivos/django-mock-queries/pull/55) ([grabekm90](https://github.com/grabekm90))
+
+## [v1.0.2](https://github.com/stphivos/django-mock-queries/tree/v1.0.2) (2017-10-16)
+[Full Changelog](https://github.com/stphivos/django-mock-queries/compare/v1.0.0...v1.0.2)
+
+**Merged pull requests:**
+
+- Fix hardcoded requirement to six library [\#53](https://github.com/stphivos/django-mock-queries/pull/53) ([stphivos](https://github.com/stphivos))
+
+## [v1.0.0](https://github.com/stphivos/django-mock-queries/tree/v1.0.0) (2017-10-15)
+[Full Changelog](https://github.com/stphivos/django-mock-queries/compare/v0.0.16...v1.0.0)
+
+**Closed issues:**
+
+- Model.objects.create can't take an instance parameter [\#50](https://github.com/stphivos/django-mock-queries/issues/50)
+- Q objects with negation [\#48](https://github.com/stphivos/django-mock-queries/issues/48)
+
+**Merged pull requests:**
+
+- Verify support of Django 1.11 [\#52](https://github.com/stphivos/django-mock-queries/pull/52) ([stphivos](https://github.com/stphivos))
+- Use function find\_field\_names to determine appropriate field names fo… [\#51](https://github.com/stphivos/django-mock-queries/pull/51) ([stphivos](https://github.com/stphivos))
+- Add support for Q objects with negation [\#49](https://github.com/stphivos/django-mock-queries/pull/49) ([stphivos](https://github.com/stphivos))
+- Added missing lookups [\#47](https://github.com/stphivos/django-mock-queries/pull/47) ([szykin](https://github.com/szykin))
+- dates\(\) and datetimes\(\) support [\#46](https://github.com/stphivos/django-mock-queries/pull/46) ([szykin](https://github.com/szykin))
+- Feature/range requirements [\#45](https://github.com/stphivos/django-mock-queries/pull/45) ([stphivos](https://github.com/stphivos))
+- Update model-mommy req [\#44](https://github.com/stphivos/django-mock-queries/pull/44) ([orf](https://github.com/orf))
+
 ## [v0.0.16](https://github.com/stphivos/django-mock-queries/tree/v0.0.16) (2017-03-14)
 [Full Changelog](https://github.com/stphivos/django-mock-queries/compare/v0.0.15...v0.0.16)
 
