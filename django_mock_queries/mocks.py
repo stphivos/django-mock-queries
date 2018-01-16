@@ -257,8 +257,12 @@ class PatcherChain(object):
 
     def __call__(self, func):
         if isinstance(func, type):
-            return self.decorate_class(func)
-        return self.decorate_callable(func)
+            decorated = self.decorate_class(func)
+        decorated = self.decorate_callable(func)
+        # keep the previous class/function name
+        decorated.__name__ = func.__name__
+        
+        return decorated
 
     def decorate_class(self, cls):
         for attr in dir(cls):
@@ -338,6 +342,8 @@ class Mocker(object):
         def decorated(*args, **kwargs):
             with self:
                 return func(*((args[0], self) + args[1:]), **kwargs)
+        # keep the previous method name
+        decorated.__name__ = func.__name__
 
         return decorated
 
