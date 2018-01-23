@@ -258,7 +258,8 @@ class PatcherChain(object):
     def __call__(self, func):
         if isinstance(func, type):
             decorated = self.decorate_class(func)
-        decorated = self.decorate_callable(func)
+        else:
+            decorated = self.decorate_callable(func)
         # keep the previous class/function name
         decorated.__name__ = func.__name__
         
