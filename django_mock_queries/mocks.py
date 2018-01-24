@@ -262,7 +262,7 @@ class PatcherChain(object):
             decorated = self.decorate_callable(func)
         # keep the previous class/function name
         decorated.__name__ = func.__name__
-        
+
         return decorated
 
     def decorate_class(self, cls):
