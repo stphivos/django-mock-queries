@@ -30,9 +30,17 @@ class MockBase(MagicMock):
 
 
 def get_missing_queryset_methods(model):
-    if model is None or not hasattr(model.objects, 'queryset_class'):
+    if model is None:
         return {}
-    queryset_class = model.objects.queryset_class
+
+    queryset_class = getattr(model.objects, 'queryset_class', None)
+
+    if queryset_class is None:
+        queryset_class = getattr(model.objects, '_queryset_class', None)
+
+    if queryset_class is None:
+        return {}
+
     missing_attrs = set(dir(queryset_class)) - set(dir(DjangoQuerySet))
     missing_methods = {}
     for attribute_name in missing_attrs:

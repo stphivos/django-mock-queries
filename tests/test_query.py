@@ -998,3 +998,25 @@ class TestQuery(TestCase):
         assert len(result) == 2
         assert result[0] == datetime.datetime(2017, 1, 10, 1, 2, 9)
         assert result[1] == datetime.datetime(2017, 1, 10, 1, 2, 3)
+
+    def test_custom_queryset_method(self):
+        # TODO: This might not work on old versions of Django and Python
+        from django.db.models import QuerySet
+
+        model = create_model('date')
+
+        class CustomQueryset(QuerySet):
+
+            def get_by_date(self, date):
+                return self.get(date=date)
+
+        model.objects = CustomQueryset.as_manager()
+
+        qs = MockSet(model=model)
+        item1 = MockModel(date=datetime.date(2017, 1, 1))
+        item2 = MockModel(date=datetime.date(2017, 1, 2))
+        item3 = MockModel(date=datetime.date(2017, 1, 3))
+
+        qs.add(item1, item2, item3)
+
+        assert qs.get_by_date(item1.date) == item1
