@@ -65,6 +65,9 @@ def MockSet(*initial_items, **kwargs):
             else:
                 filtered = list(matches(negated=query.negated, *source, **{child[0]: child[1]}))
 
+            if query.connector == CONNECTORS_AND and not filtered:
+                return filtered
+
             if not results:
                 results = filtered
                 continue
