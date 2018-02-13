@@ -157,7 +157,10 @@ def MockSet(*initial_items, **kwargs):
     mock_set.order_by = MagicMock(side_effect=order_by)
 
     def distinct():
-        results = set(items)
+        if items and isinstance(items[0], dict):
+            results = map(dict, set(tuple(sorted(d.items())) for d in items))
+        else:
+            results = set(items)
         return MockSet(*results, clone=mock_set)
 
     mock_set.distinct = MagicMock(side_effect=distinct)

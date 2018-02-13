@@ -29,6 +29,10 @@ def find_field_names(obj, **kwargs):
             return {name: name}
 
     if not hasattr(obj, '_meta'):
+        if isinstance(obj, dict):
+            field_names = list(obj.keys())
+            return field_names, field_names
+
         # It is possibly a MockSet.
         use_obj = getattr(obj, 'model', None)
 
@@ -80,7 +84,9 @@ def get_attribute(obj, attr, default=None, **kwargs):
             else:
                 target_field = nested_field
 
-            if is_list_like_iter(result):
+            if isinstance(result, dict):
+                result = result[target_field]
+            elif is_list_like_iter(result):
                 result = [get_attribute(x, target_field)[0] for x in result]
             else:
                 result = getattr(result, target_field, None)
