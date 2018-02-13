@@ -65,14 +65,13 @@ def MockSet(*initial_items, **kwargs):
             else:
                 filtered = list(matches(negated=query.negated, *source, **{child[0]: child[1]}))
 
-            if not results:
-                results = filtered
-                continue
-
-            if query.connector == CONNECTORS_OR:
-                results = merge(results, filtered)
+            if filtered:
+                if not results or query.connector == CONNECTORS_OR:
+                    results = merge(results, filtered)
+                else:
+                    results = intersect(results, filtered)
             elif query.connector == CONNECTORS_AND:
-                results = intersect(results, filtered)
+                return filtered
 
         return results
 
