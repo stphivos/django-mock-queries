@@ -2,6 +2,7 @@
 dist/
 .tox/
 .idea/
+.vscode/
 .cache
 .coverage
 .DS_Store

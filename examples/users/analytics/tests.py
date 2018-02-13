@@ -85,8 +85,8 @@ class TestMockedApi(TestCase):
         User.objects.add(*(past_visitors + today_visitors))
         count = self.api.today_visitors_count()
         assert count == len(today_visitors)
-        assert User.objects.filter(last_login__year__lte=2017).exists() is True
-        assert User.objects.filter(last_login__year__gt=2018).exists() is False
+        assert User.objects.filter(last_login__year__lte=date.today().year).exists() is True
+        assert User.objects.filter(last_login__year__gt=date.today().year + 1).exists() is False
 
 
 # Comment out this decorator to see what happens when you forget to
