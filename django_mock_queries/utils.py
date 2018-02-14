@@ -29,7 +29,7 @@ def find_field_names(obj, **kwargs):
             return {name: name}
 
     if not hasattr(obj, '_meta'):
-        if isinstance(obj, dict):
+        if type(obj) is dict:
             field_names = list(obj.keys())
             return field_names, field_names
 
@@ -84,7 +84,7 @@ def get_attribute(obj, attr, default=None, **kwargs):
             else:
                 target_field = nested_field
 
-            if isinstance(result, dict):
+            if type(result) is dict:
                 result = result[target_field]
             elif is_list_like_iter(result):
                 result = [get_attribute(x, target_field)[0] for x in result]
