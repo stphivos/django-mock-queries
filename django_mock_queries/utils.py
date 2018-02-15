@@ -241,3 +241,7 @@ def truncate(obj, kind):
             'second': obj
         }
     return trunc_mapping[kind]
+
+
+def hash_dict(obj, *fields):
+    return hash(tuple(sorted((k, v) for k, v in obj.items() if not fields or k in fields)))

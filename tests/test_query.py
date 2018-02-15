@@ -550,6 +550,16 @@ class TestQuery(TestCase):
         ]
         assert results == expected, results
 
+    def test_query_distinct_with_fields(self):
+        item_1 = MockModel(foo=1, bar='c', foo_bar='x', mock_name='item_1')
+        item_2 = MockModel(foo=2, bar='a', foo_bar='y', mock_name='item_2')
+        item_3 = MockModel(foo=1, bar='c', foo_bar='z', mock_name='item_3')
+
+        self.mock_set.add(item_2, item_3, item_1, item_3)
+        results = list(self.mock_set.order_by('foo', 'bar', 'foo_bar').distinct('foo', 'bar'))
+
+        assert results == [item_1, item_2], results
+
     def test_query_implements_iterator_on_items(self):
         items = [1, 2, 3]
         assert [x for x in MockSet(*items)] == items
