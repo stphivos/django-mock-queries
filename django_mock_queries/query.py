@@ -1,12 +1,13 @@
 import datetime
 from cached_property import cached_property
+from collections import OrderedDict
 from mock import Mock, MagicMock, PropertyMock
 
 from .constants import *
 from .exceptions import *
 from .utils import (
     matches, merge, intersect, get_attribute, validate_mock_set, is_list_like_iter, flatten_list, truncate,
-    find_field_names
+    find_field_names, hash_dict
 )
 
 
@@ -156,9 +157,13 @@ def MockSet(*initial_items, **kwargs):
 
     mock_set.order_by = MagicMock(side_effect=order_by)
 
-    def distinct():
-        results = set(items)
-        return MockSet(*results, clone=mock_set)
+    def distinct(*fields):
+        results = OrderedDict()
+        for item in items:
+            key = hash_dict(item, *fields)
+            if key not in results:
+                results[key] = item
+        return MockSet(*results.values(), clone=mock_set)
 
     mock_set.distinct = MagicMock(side_effect=distinct)
 
@@ -379,7 +384,7 @@ class MockModel(dict):
         self.__setitem__(key, value)
 
     def __hash__(self):
-        return hash(tuple(sorted(self.items())))
+        return hash_dict(self)
 
     def __call__(self, *args, **kwargs):
         return MockModel(*args, **kwargs)
