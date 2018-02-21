@@ -386,6 +386,11 @@ class TestMockers(TestCase):
             obj.save()
             self.assertEqual(Car.objects.get(pk=obj.id), obj)
 
+    def test_model_mocker_generic_with_objects_create(self):
+        with ModelMocker(Car):
+            obj = Car.objects.create(speed=10)
+            self.assertEqual(Car.objects.get(pk=obj.id), obj)
+
     def test_model_mocker_with_custom_method(self):
         with self.CarModelMocker(Car, 'validate_price') as mocker:
             obj = Car()

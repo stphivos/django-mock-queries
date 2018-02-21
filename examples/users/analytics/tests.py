@@ -69,9 +69,6 @@ class TestMockedApi(TestCase):
         for k, v in attrs.items():
             assert getattr(user, k) == v
 
-        # noinspection PyUnresolvedReferences
-        assert User.save.call_count == 1
-
     def test_api_today_visitors_counts_todays_logins(self):
         past_visitors = [
             MockModel(last_login=(date.today() - timedelta(days=1))),
