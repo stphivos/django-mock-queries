@@ -245,7 +245,6 @@ def MockSet(*initial_items, **kwargs):
         #         attrs[field] = None
 
         obj = mock_set.model(**attrs)
-        obj.save(force_insert=True, using=MagicMock())
         add(obj)
 
         return obj

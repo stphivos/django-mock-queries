@@ -1,6 +1,6 @@
 import datetime
 
-from mock import MagicMock, ANY
+from mock import MagicMock
 from unittest import TestCase
 
 from django.core.exceptions import FieldError
@@ -568,7 +568,7 @@ class TestQuery(TestCase):
         qs = MockSet(model=create_model('foo', 'bar', 'none'))
         attrs = dict(foo=1, bar='a')
         obj = qs.create(**attrs)
-        obj.save.assert_called_once_with(force_insert=True, using=ANY)
+
         assert obj in [x for x in qs]
         assert hasattr(obj, 'foo') and obj.foo == 1
         assert hasattr(obj, 'bar') and obj.bar == 'a'
