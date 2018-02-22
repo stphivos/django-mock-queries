@@ -587,6 +587,34 @@ class TestQuery(TestCase):
         with self.assertRaises(ValueError):
             qs.create(**attrs)
 
+    def test_query_update_returns_number_of_affected_rows(self):
+        objects = [MockModel(foo=1), MockModel(foo=1), MockModel(foo=2)]
+        qs = MockSet(*objects, model=create_model('foo', 'bar'))
+        count = qs.filter(foo=1).update(bar=2)
+
+        assert count == len(objects) - 1, count
+
+    def test_query_update_with_multiple_values(self):
+        objects = [MockModel(foo=1), MockModel(foo=2), MockModel(foo=3)]
+        qs = MockSet(*objects, model=create_model('foo', 'bar'))
+
+        set_foo, set_bar = 4, 5
+        qs.update(foo=set_foo, bar=set_bar)
+
+        for x in qs:
+            assert x.foo == set_foo, x.foo
+            assert x.bar == set_bar, x.bar
+
+    def test_query_update_does_not_allow_related_model_fields(self):
+        objects = [MockModel(foo=MockModel(bar=1)), MockModel(foo=MockModel(bar=2))]
+        qs = MockSet(*objects, model=create_model('foo'))
+
+        target = dict(foo__bar=2)
+        with self.assertRaises(FieldError) as cm:
+            qs.update(**target)
+
+        assert 'Cannot update model field \'{}\''.format(target.keys()[0]) in str(cm.exception)
+
     def test_query_gets_unique_match_by_attrs_from_set(self):
         item_1 = MockModel(foo=1)
         item_2 = MockModel(foo=2)

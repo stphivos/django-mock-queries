@@ -6,8 +6,7 @@ from mock import Mock, MagicMock, PropertyMock
 from .constants import *
 from .exceptions import *
 from .utils import (
-    matches, merge, intersect, get_attribute, validate_mock_set, is_list_like_iter, flatten_list, truncate,
-    find_field_names, hash_dict
+    matches, merge, intersect, get_attribute, validate_mock_set, is_list_like_iter, flatten_list, truncate, hash_dict
 )
 
 
@@ -231,13 +230,7 @@ def MockSet(*initial_items, **kwargs):
     mock_set.__iter__ = MagicMock(side_effect=__iter__)
 
     def create(**attrs):
-        validate_mock_set(mock_set)
-
-        lookup_fields, target_fields = find_field_names(mock_set.model)
-
-        for k in attrs.keys():
-            if k not in target_fields:
-                raise ValueError('{} is an invalid keyword argument for this function'.format(k))
+        validate_mock_set(mock_set, **attrs)
 
         # TODO: Determine the default value for each field and set it to that so django doesn't complain
         # for field in target_fields:
@@ -250,6 +243,19 @@ def MockSet(*initial_items, **kwargs):
         return obj
 
     mock_set.create = MagicMock(side_effect=create)
+
+    def update(**attrs):
+        validate_mock_set(mock_set, for_update=True, **attrs)
+
+        count = 0
+        for item in items:
+            count += 1
+            for k, v in attrs.items():
+                setattr(item, k, v)
+
+        return count
+
+    mock_set.update = MagicMock(side_effect=update)
 
     def get(**attrs):
         results = filter(**attrs)

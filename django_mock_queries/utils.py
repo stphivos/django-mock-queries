@@ -183,9 +183,22 @@ def matches(*source, **attrs):
             yield x
 
 
-def validate_mock_set(mock_set):
+def validate_mock_set(mock_set, for_update=False, **fields):
     if mock_set.model is None:
         raise ModelNotSpecified()
+
+    lookup_fields, target_fields = find_field_names(mock_set.model)
+
+    if fields:
+        for k in fields.keys():
+            if '__' in k and for_update:
+                raise FieldError(
+                    'Cannot update model field %r (only non-relations and foreign keys permitted).' % k
+                )
+            if k not in target_fields:
+                raise ValueError('{} is an invalid keyword argument for this function'.format(k))
+
+    return lookup_fields, target_fields
 
 
 def validate_date_or_datetime(value, comparison):
