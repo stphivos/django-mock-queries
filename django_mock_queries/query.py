@@ -257,6 +257,20 @@ def MockSet(*initial_items, **kwargs):
 
     mock_set.update = MagicMock(side_effect=update)
 
+    def _delete_recursive(*items_to_remove):
+        for item in items_to_remove:
+            items.remove(item)
+
+        if clone:
+            clone._delete_recursive(*items_to_remove)
+
+    mock_set._delete_recursive = MagicMock(side_effect=_delete_recursive)
+
+    def delete():
+        _delete_recursive(*items)
+
+    mock_set.delete = MagicMock(side_effect=delete)
+
     def get(**attrs):
         results = filter(**attrs)
         if not results.exists():
