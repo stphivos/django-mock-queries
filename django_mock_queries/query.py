@@ -14,28 +14,64 @@ class MockBase(MagicMock):
     def return_self(self, *args, **kwargs):
         return self
 
+    def create_method(self, method):
+        def wrapper(*args, **kwargs):
+            return method(self, *args, **kwargs)
+        return wrapper
+
     def __init__(self, *args, **kwargs):
         for x in kwargs.pop('return_self_methods', []):
             kwargs.update({x: self.return_self})
 
+        for key, method in kwargs.pop('missing_methods', {}).items():
+            kwargs.update({key: self.create_method(method)})
+
         super(MockBase, self).__init__(*args, **kwargs)
+
+
+def get_missing_queryset_methods(model):
+    if model is None:
+        return {}
+
+    queryset_class = getattr(model.objects, 'queryset_class', None)
+
+    if queryset_class is None:
+        queryset_class = getattr(model.objects, '_queryset_class', None)
+
+    if queryset_class is None:
+        return {}
+
+    missing_attrs = set(dir(queryset_class)) - set(dir(DjangoQuerySet))
+    missing_methods = {}
+    for attribute_name in missing_attrs:
+        attribute = getattr(queryset_class, attribute_name)
+        if hasattr(attribute, '__call__'):
+            missing_methods[attribute_name] = attribute
+
+    return missing_methods
 
 
 def MockSet(*initial_items, **kwargs):
     items = list()
     clone = kwargs.get('clone', None)
-
-    mock_set = MockBase(spec=DjangoQuerySet, return_self_methods=[
-        'all',
-        'only',
-        'defer',
-        'using',
-        'select_related',
-        'prefetch_related',
-        'select_for_update'
-    ])
+    model = clone.model if clone else kwargs.get('model', None)
+    missing_methods = get_missing_queryset_methods(model)
+    mock_set = MockBase(
+        spec=DjangoQuerySet,
+        missing_methods=missing_methods,
+        return_self_methods=[
+            'all',
+            'only',
+            'defer',
+            'using',
+            'select_related',
+            'prefetch_related',
+            'select_for_update',
+            'iterator',
+        ],
+    )
     mock_set.count = MagicMock(side_effect=lambda: len(items))
-    mock_set.model = clone.model if clone else kwargs.get('model', None)
+    mock_set.model = model
     mock_set.__len__ = MagicMock(side_effect=lambda: len(items))
 
     def add(*models):
