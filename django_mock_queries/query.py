@@ -189,7 +189,11 @@ class MockSet(MagicMock):
                 "arguments or 'get_latest_by' in the model's Meta."
             )
 
-        results = sorted(self.items, key=lambda obj: tuple(get_attribute(obj, key) for key in order_fields), reverse=reverse)
+        results = sorted(
+            self.items,
+            key=lambda obj: tuple(get_attribute(obj, key) for key in order_fields),
+            reverse=reverse,
+        )
         if len(results) == 0:
             self.raise_does_not_exist()
 
