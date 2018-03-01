@@ -10,7 +10,9 @@ from django.db.utils import ConnectionHandler, NotSupportedError
 from functools import partial
 from itertools import chain
 from mock import Mock, MagicMock, patch, PropertyMock
+from types import MethodType
 
+from .constants import DjangoModelDeletionCollector, DjangoDbRouter
 from .query import MockSet
 
 
@@ -316,57 +318,88 @@ class Mocker(object):
     A decorator that patches multiple class methods with a magic mock instance that does nothing.
     """
 
-    def __init__(self, cls, *methods):
+    shared_mocks = {}
+    shared_patchers = {}
+    shared_original = {}
+
+    def __init__(self, cls, *methods, **kwargs):
         self.cls = cls
         self.methods = methods
 
+        self.inst_mocks = {}
+        self.inst_patchers = {}
+        self.inst_original = {}
+
+        self.outer = kwargs.get('outer', True)
+
     def __enter__(self):
-        self.mocks = {}
-        self.patchers = {}
-
-        for method in self.methods:
-            replacement_method = '_'.join(method.split('.'))
-            target_cls, target_method = self.get_target_method(self.cls, method)
-            mock_cls = MagicMock if callable(getattr(target_cls, target_method)) else PropertyMock
-
-            patcher = patch.object(target_cls, target_method, mock_cls(
-                name='{}.{}'.format(target_cls, method),
-                side_effect=getattr(self, replacement_method, MagicMock())
-            ))
-
-            self.patchers[method] = patcher
-            self.mocks[method] = patcher.start()
-
+        self.patch_object_methods(self.cls, *self.methods)
         return self
 
     def __call__(self, func):
         def decorated(*args, **kwargs):
             with self:
                 return func(*((args[0], self) + args[1:]), **kwargs)
+
         # keep the previous method name
         decorated.__name__ = func.__name__
 
         return decorated
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        for patcher in self.patchers.values():
+        for key, patcher in self.inst_patchers.items():
             patcher.stop()
+        if self.outer:
+            for key, patcher in self.shared_patchers.items():
+                patcher.stop()
 
-    def method(self, name):
-        return self.mocks[name]
+    def key(self, method, obj=None):
+        return '{}.{}'.format(obj or self.cls, method)
 
-    def get_target_method(self, cls, method):
-        target_obj = cls
+    def method(self, name, obj=None):
+        return dict(self.shared_mocks, **self.inst_mocks)[self.key(name, obj=obj)]
+
+    def original_method(self, name, obj=None):
+        return dict(self.shared_original, **self.inst_original)[self.key(name, obj=obj)]
+
+    def get_source_method(self, obj, method):
+        source_obj = obj
         parts = method.split('.')
 
-        target_method = parts[-1]
+        source_method = parts[-1]
         parts = parts[:-1]
 
         while parts:
-            target_obj = getattr(target_obj, parts[0], None) or getattr(target_obj.model, '_' + parts[0])
+            source_obj = getattr(source_obj, parts[0], None) or getattr(source_obj.model, '_' + parts[0])
             parts.pop(0)
 
-        return target_obj, target_method
+        return source_obj, source_method
+
+    def patch_object_methods(self, obj, *methods, **kwargs):
+        for method in methods:
+            if kwargs.get('shared', False):
+                original, patchers, mocks = self.shared_original, self.shared_patchers, self.shared_mocks
+            else:
+                original, patchers, mocks = self.inst_original, self.inst_patchers, self.inst_mocks
+
+            key = self.key(method, obj=obj)
+            source_obj, source_method = self.get_source_method(obj, method)
+            original[key] = original.get(key, None) or getattr(source_obj, source_method)
+
+            target_name = '_'.join(method.split('.'))
+            target_obj = getattr(self, target_name, None)
+
+            if target_obj is None:
+                mock_args = dict(new=MagicMock())
+            elif type(target_obj) == MethodType:
+                mock_args = dict(new=MagicMock(autospec=True, side_effect=target_obj))
+            else:
+                mock_args = dict(new=PropertyMock(return_value=target_obj))
+
+            patcher = patch.object(source_obj, source_method, **mock_args)
+
+            patchers[key] = patcher
+            mocks[key] = patcher.start()
 
 
 class ModelMocker(Mocker):
@@ -376,27 +409,59 @@ class ModelMocker(Mocker):
 
     default_methods = ('objects', '_meta.base_manager._insert', '_do_update')
 
-    def __init__(self, cls, *methods):
-        super(ModelMocker, self).__init__(cls, *(self.default_methods + methods))
-        self.qs = MockSet(model=cls)
+    def __init__(self, cls, *methods, **kwargs):
+        super(ModelMocker, self).__init__(cls, *(self.default_methods + methods), **kwargs)
 
-    def objects(self):
-        return self.qs
+        self.objects = MockSet(model=self.cls)
+        self.objects.on('added', self._on_added)
 
-    def _meta_base_manager__insert(self, objects, *args, **kwargs):
+        self.state = {}
+
+    def __enter__(self):
+        result = super(ModelMocker, self).__enter__()
+        self.patch_object_methods(DjangoModelDeletionCollector, 'collect', 'delete', shared=True)
+        return result
+
+    def _obj_pk(self, obj):
+        return getattr(obj, self.cls._meta.pk.attname, None)
+
+    def _on_added(self, obj):
+        pk = max([self._obj_pk(x) or 0 for x in self.objects] + [0]) + 1
+        setattr(obj, self.cls._meta.pk.attname, pk)
+
+    def _meta_base_manager__insert(self, objects, *_, **__):
         obj = objects[0]
+        self.objects.add(obj)
 
-        obj.pk = max([x.pk for x in self.qs] + [0]) + 1
-        self.qs.add(obj)
+        return self._obj_pk(obj)
 
-        return obj.pk
+    def _do_update(self, _, __, pk_val, values, *___, **____):
+        objects = self.objects.filter(pk=pk_val)
 
-    def _do_update(self, base_qs, using, pk_val, values, *args, **kwargs):
-        if not self.qs.filter(pk=pk_val).exists():
+        if objects.exists():
+            attrs = {field.name: value for field, _, value in values if value is not None}
+            self.objects.update(**attrs)
+            return True
+        else:
             return False
 
-        for field, _, value in values:
-            if not (value is None and not field.null):
-                setattr(self.qs.get(pk=pk_val), field.name, value)
+    def collect(self, objects, *args, **kwargs):
+        model = getattr(objects, 'model', None) or objects[0]
 
-        return True
+        if not (model is self.cls or isinstance(model, self.cls)):
+            using = getattr(objects, 'db', None) or DjangoDbRouter.db_for_write(model._meta.model, instance=model)
+            self.state['collector'] = DjangoModelDeletionCollector(using=using)
+
+            collect = self.original_method('collect', obj=DjangoModelDeletionCollector)
+            collect(self.state['collector'], objects, *args, **kwargs)
+
+        self.state['model'] = model
+
+    def delete(self, *args, **kwargs):
+        model = self.state.pop('model')
+
+        if not (model is self.cls or isinstance(model, self.cls)):
+            delete = self.original_method('delete', obj=DjangoModelDeletionCollector)
+            return delete(self.state.pop('collector'), *args, **kwargs)
+        else:
+            return self.objects.filter(pk=getattr(model, self.cls._meta.pk.attname)).delete()

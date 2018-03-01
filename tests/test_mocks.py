@@ -7,9 +7,9 @@ from unittest import TestCase
 
 from django_mock_queries import mocks
 from django_mock_queries.mocks import monkey_patch_test_db, mock_django_connection, \
-    MockOneToOneMap, MockOneToManyMap, PatcherChain, mocked_relations, ModelMocker
+    MockOneToOneMap, MockOneToManyMap, PatcherChain, mocked_relations, ModelMocker, Mocker
 from django_mock_queries.query import MockSet
-from tests.mock_models import Car, Sedan, Manufacturer
+from tests.mock_models import Car, Sedan, Manufacturer, CarVariation
 
 BUILTINS = 'builtins' if sys.version_info[0] >= 3 else '__builtin__'
 
@@ -369,7 +369,40 @@ class TestMockers(TestCase):
             """ The real implementation would call an external service that
             we would like to skip but verify it's called before save. """
 
-    def test_model_mocker_generic(self):
+    def test_mocker_with_replacement_method(self):
+        class Foo(object):
+            def who(self):
+                return 'foo'
+
+        class Bar(Mocker):
+            def who(self):
+                return 'bar'
+
+        with Bar(Foo, 'who') as mocker:
+            self.assertEqual(Foo().who(), mocker.who())
+
+    def test_mocker_with_replacement_attribute(self):
+        class Foo(object):
+            who = 'foo'
+
+        class Bar(Mocker):
+            who = 'bar'
+
+        with Bar(Foo, 'who') as mocker:
+            self.assertEqual(Foo.who, mocker.who)
+
+    def test_mocker_without_replacement(self):
+        class Foo(object):
+            def who(self):
+                return 'foo'
+
+        class Bar(Mocker):
+            pass
+
+        with Bar(Foo, 'who'):
+            self.assertIsInstance(Foo().who, MagicMock)
+
+    def test_model_mocker_instance_save(self):
         with ModelMocker(Car):
             # New instance gets inserted
             obj = Car(speed=4)
@@ -386,7 +419,7 @@ class TestMockers(TestCase):
             obj.save()
             self.assertEqual(Car.objects.get(pk=obj.id), obj)
 
-    def test_model_mocker_generic_with_objects_create(self):
+    def test_model_mocker_objects_create(self):
         with ModelMocker(Car):
             obj = Car.objects.create(speed=10)
             self.assertEqual(Car.objects.get(pk=obj.id), obj)
@@ -404,3 +437,111 @@ class TestMockers(TestCase):
         obj.save()
 
         mocker.method('validate_price').assert_called_with()
+
+    def test_model_mocker_event_added_from_manager(self):
+        objects = {}
+
+        def car_added(obj):
+            objects['added'] = obj
+
+        with ModelMocker(Car) as mocker:
+            mocker.objects.on('added', car_added)
+            objects['car'] = Car.objects.create(speed=300)
+
+        self.assertIsInstance(objects['added'], Car)
+        self.assertEqual(objects['added'], objects['car'])
+
+    def test_model_mocker_event_added_from_instance(self):
+        objects = {}
+
+        def car_added(obj):
+            objects['added'] = obj
+
+        with ModelMocker(Car) as mocker:
+            mocker.objects.on('added', car_added)
+            objects['car'] = Car(speed=300)
+            objects['car'].save()
+
+        self.assertIsInstance(objects['added'], Car)
+        self.assertEqual(objects['added'], objects['car'])
+
+    def test_model_mocker_event_updated_from_manager(self):
+        objects = {}
+
+        def car_updated(obj):
+            objects['updated'] = obj
+
+        with ModelMocker(Car) as mocker:
+            mocker.objects.on('updated', car_updated)
+            objects['car'] = Car.objects.create(speed=300)
+            Car.objects.update(speed=400)
+
+        self.assertIsInstance(objects['updated'], Car)
+        self.assertEqual(objects['updated'], objects['car'])
+
+    def test_model_mocker_event_updated_from_instance(self):
+        objects = {}
+
+        def car_updated(obj):
+            objects['updated'] = obj
+
+        with ModelMocker(Car) as mocker:
+            mocker.objects.on('updated', car_updated)
+            objects['car'] = Car.objects.create(speed=300)
+            objects['car'].save()
+
+        self.assertIsInstance(objects['updated'], Car)
+        self.assertEqual(objects['updated'], objects['car'])
+
+    def test_model_mocker_event_deleted_from_manager(self):
+        objects = {}
+
+        def car_deleted(obj):
+            objects['deleted'] = obj
+
+        with ModelMocker(Car) as mocker:
+            mocker.objects.on('deleted', car_deleted)
+            objects['car'] = Car.objects.create(speed=300)
+            Car.objects.delete()
+
+        self.assertIsInstance(objects['deleted'], Car)
+        self.assertEqual(objects['deleted'], objects['car'])
+
+    def test_model_mocker_event_deleted_from_instance(self):
+        objects = {}
+
+        def car_deleted(obj):
+            objects['deleted'] = obj
+
+        with ModelMocker(Car) as mocker:
+            mocker.objects.on('deleted', car_deleted)
+            objects['car'] = Car.objects.create(speed=300)
+            objects['car'].delete()
+
+        self.assertIsInstance(objects['deleted'], Car)
+        self.assertEqual(objects['deleted'], objects['car'])
+
+    def test_model_mocker_does_not_interfere_with_non_mocked_models(self):
+        original_objects = CarVariation.objects
+
+        with ModelMocker(Manufacturer) as make_mocker:
+            self.assertEqual(Manufacturer.objects, make_mocker.objects)
+
+            with ModelMocker(Car, outer=False) as car_mocker:
+                self.assertEqual(Car.objects, car_mocker.objects)
+                self.assertEqual(CarVariation.objects, original_objects)
+
+                with self.assertRaises(NotSupportedError):
+                    CarVariation.objects.create(color='blue')
+
+                with self.assertRaises(NotSupportedError):
+                    CarVariation(color='blue').save()
+
+                with self.assertRaises(NotSupportedError):
+                    CarVariation(id=1, color='blue').save()
+
+                with self.assertRaises(NotSupportedError):
+                    CarVariation(pk=1).delete()
+
+                with self.assertRaises(NotSupportedError):
+                    CarVariation.objects.all().delete()
