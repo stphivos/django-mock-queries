@@ -90,5 +90,7 @@ AGGREGATES = (
 
 DjangoQ = locate('django.db.models.Q')
 DjangoQuerySet = locate('django.db.models.QuerySet')
+DjangoDbRouter = locate('django.db.router')
+DjangoModelDeletionCollector = locate('django.db.models.deletion.Collector')
 ObjectDoesNotExist = locate('django.core.exceptions.ObjectDoesNotExist')
 MultipleObjectsReturned = locate('django.core.exceptions.MultipleObjectsReturned')

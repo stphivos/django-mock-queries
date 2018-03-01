@@ -38,6 +38,25 @@ def MockSet(*initial_items, **kwargs):
     mock_set.model = clone.model if clone else kwargs.get('model', None)
     mock_set.__len__ = MagicMock(side_effect=lambda: len(items))
 
+    mock_set.events = {}
+
+    EVENT_ADDED = 'added'
+    EVENT_UPDATED = 'updated'
+    EVENT_SAVED = 'saved'
+    EVENT_DELETED = 'deleted'
+    SUPPORTED_EVENTS = [EVENT_ADDED, EVENT_UPDATED, EVENT_SAVED, EVENT_DELETED]
+
+    def fire(obj, *events):
+        for name in events:
+            for handler in mock_set.events.get(name, []):
+                handler(obj)
+
+    def on(event, handler):
+        assert event in SUPPORTED_EVENTS, event
+        mock_set.events[event] = mock_set.events.get(event, []) + [handler]
+
+    mock_set.on = MagicMock(side_effect=on)
+
     def add(*models):
         # Initialize MockModel default fields from MockSet model fields if defined
         if mock_set.model:
@@ -45,16 +64,12 @@ def MockSet(*initial_items, **kwargs):
                 if isinstance(model, MockModel) or isinstance(model, Mock):
                     [setattr(model, f.name, None) for f in mock_set.model._meta.fields if f.name not in model.keys()]
 
-        items.extend(models)
+        for model in models:
+            items.append(model)
+            fire(model, EVENT_ADDED, EVENT_SAVED)
 
     add(*initial_items)
     mock_set.add = MagicMock(side_effect=add)
-
-    def remove(**attrs):
-        for x in matches(*items, **attrs):
-            items.remove(x)
-
-    mock_set.remove = MagicMock(side_effect=remove)
 
     def filter_q(source, query):
         results = []
@@ -94,11 +109,6 @@ def MockSet(*initial_items, **kwargs):
         return MockSet(*results, clone=mock_set)
 
     mock_set.exclude = MagicMock(side_effect=exclude)
-
-    def clear():
-        del items[:]
-
-    mock_set.clear = MagicMock(side_effect=clear)
 
     def exists():
         return len(items) > 0
@@ -252,24 +262,32 @@ def MockSet(*initial_items, **kwargs):
             count += 1
             for k, v in attrs.items():
                 setattr(item, k, v)
+                fire(item, EVENT_UPDATED, EVENT_SAVED)
 
         return count
 
     mock_set.update = MagicMock(side_effect=update)
 
-    def _delete_recursive(*items_to_remove):
-        for item in items_to_remove:
+    def _delete_recursive(*items_to_remove, **attrs):
+        for item in matches(*items_to_remove, **attrs):
             items.remove(item)
+            fire(item, EVENT_DELETED)
 
         if clone:
-            clone._delete_recursive(*items_to_remove)
+            clone._delete_recursive(*items_to_remove, **attrs)
 
     mock_set._delete_recursive = MagicMock(side_effect=_delete_recursive)
 
-    def delete():
-        _delete_recursive(*items)
+    def delete(**attrs):
+        # Delete normally doesn't take **attrs - they're only needed for remove
+        _delete_recursive(*items, **attrs)
 
     mock_set.delete = MagicMock(side_effect=delete)
+
+    # The following 2 methods were kept for backwards compatibility and
+    # should be removed in the future since they are covered by filter & delete
+    mock_set.clear = MagicMock(side_effect=delete)
+    mock_set.remove = MagicMock(side_effect=delete)
 
     def get(**attrs):
         results = filter(**attrs)
