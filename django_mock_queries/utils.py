@@ -97,10 +97,10 @@ def get_attribute(obj, attr, default=None, **kwargs):
 
 
 def is_match(first, second, comparison=None):
-    if isinstance(first, django_mock_queries.query.MockBase):
+    if isinstance(first, django_mock_queries.query.MockSet):
         return is_match_in_children(comparison, first, second)
     if (isinstance(first, (int, str)) and
-            isinstance(second, django_mock_queries.query.MockBase)):
+            isinstance(second, django_mock_queries.query.MockSet)):
         second = convert_to_pks(second)
     if (isinstance(first, date) or isinstance(first, datetime)) \
             and isinstance(comparison, tuple) and len(comparison) == 2:
@@ -218,7 +218,7 @@ def validate_date_or_datetime(value, comparison):
 def is_list_like_iter(obj):
     if isinstance(obj, django_mock_queries.query.MockModel):
         return False
-    elif isinstance(obj, django_mock_queries.query.MockBase):
+    elif isinstance(obj, django_mock_queries.query.MockSet):
         return True
     elif isinstance(obj, Mock):
         return False

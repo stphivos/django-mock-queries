@@ -10,22 +10,13 @@ from .utils import (
 )
 
 
-class MockBase(MagicMock):
-    def return_self(self, *args, **kwargs):
-        return self
-
-    def __init__(self, *args, **kwargs):
-        for x in kwargs.pop('return_self_methods', []):
-            kwargs.update({x: self.return_self})
-
-        super(MockBase, self).__init__(*args, **kwargs)
-
-
-def MockSet(*initial_items, **kwargs):
-    items = list()
-    clone = kwargs.get('clone', None)
-
-    mock_set = MockBase(spec=DjangoQuerySet, return_self_methods=[
+class MockSet(MagicMock):
+    EVENT_ADDED = 'added'
+    EVENT_UPDATED = 'updated'
+    EVENT_SAVED = 'saved'
+    EVENT_DELETED = 'deleted'
+    SUPPORTED_EVENTS = [EVENT_ADDED, EVENT_UPDATED, EVENT_SAVED, EVENT_DELETED]
+    RETURN_SELF_METHODS = [
         'all',
         'only',
         'defer',
@@ -33,50 +24,60 @@ def MockSet(*initial_items, **kwargs):
         'select_related',
         'prefetch_related',
         'select_for_update'
-    ])
-    mock_set.count = MagicMock(side_effect=lambda: len(items))
-    mock_set.model = clone.model if clone else kwargs.get('model', None)
-    mock_set.__len__ = MagicMock(side_effect=lambda: len(items))
+    ]
 
-    mock_set.events = {}
+    def __init__(self, *initial_items, **kwargs):
+        clone = kwargs.pop('clone', None)
+        model = kwargs.pop('model', None)
 
-    EVENT_ADDED = 'added'
-    EVENT_UPDATED = 'updated'
-    EVENT_SAVED = 'saved'
-    EVENT_DELETED = 'deleted'
-    SUPPORTED_EVENTS = [EVENT_ADDED, EVENT_UPDATED, EVENT_SAVED, EVENT_DELETED]
+        for x in self.RETURN_SELF_METHODS:
+            kwargs.update({x: self.return_self})
 
-    def fire(obj, *events):
+        super(MockSet, self).__init__(spec=DjangoQuerySet, **kwargs)
+
+        self.items = list()
+        self.clone = clone
+        self.model = getattr(clone, 'model', model)
+        self.events = {}
+
+        self.add(*initial_items)
+
+        self.__len__ = lambda s: len(s.items)
+        self.__iter__ = lambda s: iter(s.items)
+        self.__getitem__ = lambda s, k: self.items[k]
+
+    def return_self(self, *args, **kwargs):
+        return self
+
+    def count(self):
+        return len(self.items)
+
+    def fire(self, obj, *events):
         for name in events:
-            for handler in mock_set.events.get(name, []):
+            for handler in self.events.get(name, []):
                 handler(obj)
 
-    def on(event, handler):
-        assert event in SUPPORTED_EVENTS, event
-        mock_set.events[event] = mock_set.events.get(event, []) + [handler]
+    def on(self, event, handler):
+        assert event in self.SUPPORTED_EVENTS, event
+        self.events[event] = self.events.get(event, []) + [handler]
 
-    mock_set.on = MagicMock(side_effect=on)
-
-    def add(*models):
+    def add(self, *models):
         # Initialize MockModel default fields from MockSet model fields if defined
-        if mock_set.model:
+        if self.model:
             for model in models:
                 if isinstance(model, MockModel) or isinstance(model, Mock):
-                    [setattr(model, f.name, None) for f in mock_set.model._meta.fields if f.name not in model.keys()]
+                    [setattr(model, f.name, None) for f in self.model._meta.fields if f.name not in model.keys()]
 
         for model in models:
-            items.append(model)
-            fire(model, EVENT_ADDED, EVENT_SAVED)
+            self.items.append(model)
+            self.fire(model, self.EVENT_ADDED, self.EVENT_SAVED)
 
-    add(*initial_items)
-    mock_set.add = MagicMock(side_effect=add)
-
-    def filter_q(source, query):
+    def filter_q(self, source, query):
         results = []
 
         for child in query.children:
             if isinstance(child, DjangoQ):
-                filtered = filter_q(source, child)
+                filtered = self.filter_q(source, child)
             else:
                 filtered = list(matches(negated=query.negated, *source, **{child[0]: child[1]}))
 
@@ -90,37 +91,24 @@ def MockSet(*initial_items, **kwargs):
 
         return results
 
-    mock_set.filter_q = MagicMock(side_effect=filter_q)
-
-    def filter(*args, **attrs):
-        results = list(items)
+    def filter(self, *args, **attrs):
+        results = list(self.items)
         for x in args:
             if isinstance(x, DjangoQ):
-                results = filter_q(results, x)
+                results = self.filter_q(results, x)
             else:
                 raise ArgumentNotSupported()
-        return MockSet(*matches(*results, **attrs), clone=mock_set)
+        return MockSet(*matches(*results, **attrs), clone=self)
 
-    mock_set.filter = MagicMock(side_effect=filter)
+    def exclude(self, *args, **attrs):
+        excluded = self.filter(*args, **attrs)
+        results = [item for item in self.items if item not in excluded]
+        return MockSet(*results, clone=self)
 
-    def exclude(*args, **attrs):
-        excluded = filter(*args, **attrs)
-        results = [item for item in items if item not in excluded]
-        return MockSet(*results, clone=mock_set)
+    def exists(self):
+        return len(self.items) > 0
 
-    mock_set.exclude = MagicMock(side_effect=exclude)
-
-    def exists():
-        return len(items) > 0
-
-    mock_set.exists = MagicMock(side_effect=exists)
-
-    def get_item(x):
-        return items[x]
-
-    mock_set.__getitem__ = MagicMock(side_effect=get_item)
-
-    def aggregate(*args, **kwargs):
+    def aggregate(self, *args, **kwargs):
         result = {}
 
         for expr in set(args):
@@ -130,7 +118,7 @@ def MockSet(*initial_items, **kwargs):
             values = []
             expr_result = None
 
-            for x in items:
+            for x in self.items:
                 val = get_attribute(x, expr.source_expressions[0].name)[0]
                 if val is None:
                     continue
@@ -152,35 +140,29 @@ def MockSet(*initial_items, **kwargs):
 
         return result
 
-    mock_set.aggregate = MagicMock(side_effect=aggregate)
-
-    def order_by(*fields):
-        results = items
+    def order_by(self, *fields):
+        results = self.items
         for field in reversed(fields):
             is_reversed = field.startswith('-')
             attr = field[1:] if is_reversed else field
             results = sorted(results,
                              key=lambda r: get_attribute(r, attr),
                              reverse=is_reversed)
-        return MockSet(*results, clone=mock_set)
+        return MockSet(*results, clone=self)
 
-    mock_set.order_by = MagicMock(side_effect=order_by)
-
-    def distinct(*fields):
+    def distinct(self, *fields):
         results = OrderedDict()
-        for item in items:
+        for item in self.items:
             key = hash_dict(item, *fields)
             if key not in results:
                 results[key] = item
-        return MockSet(*results.values(), clone=mock_set)
+        return MockSet(*results.values(), clone=self)
 
-    mock_set.distinct = MagicMock(side_effect=distinct)
-
-    def raise_does_not_exist():
-        does_not_exist = getattr(mock_set.model, 'DoesNotExist', ObjectDoesNotExist)
+    def raise_does_not_exist(self):
+        does_not_exist = getattr(self.model, 'DoesNotExist', ObjectDoesNotExist)
         raise does_not_exist()
 
-    def _earliest_or_latest(*fields, **field_kwargs):
+    def _earliest_or_latest(self, *fields, **field_kwargs):
         """
         Mimic Django's behavior
         https://github.com/django/django/blob/746caf3ef821dbf7588797cb2600fa81b9df9d1d/django/db/models/query.py#L560
@@ -197,7 +179,7 @@ def MockSet(*initial_items, **kwargs):
         elif fields:
             order_fields = fields
         else:
-            order_fields = mock_set.model._meta.get_latest_by
+            order_fields = self.model._meta.get_latest_by
             if order_fields and not isinstance(order_fields, (tuple, list)):
                 order_fields = (order_fields,)
 
@@ -207,118 +189,96 @@ def MockSet(*initial_items, **kwargs):
                 "arguments or 'get_latest_by' in the model's Meta."
             )
 
-        results = sorted(items, key=lambda obj: tuple(get_attribute(obj, key) for key in order_fields), reverse=reverse)
+        results = sorted(self.items, key=lambda obj: tuple(get_attribute(obj, key) for key in order_fields), reverse=reverse)
         if len(results) == 0:
-            raise_does_not_exist()
+            self.raise_does_not_exist()
 
         return results[0]
 
-    def earliest(*fields, **field_kwargs):
-        return _earliest_or_latest(*fields, **field_kwargs)
+    def earliest(self, *fields, **field_kwargs):
+        return self._earliest_or_latest(*fields, **field_kwargs)
 
-    mock_set.earliest = MagicMock(side_effect=earliest)
+    def latest(self, *fields, **field_kwargs):
+        return self._earliest_or_latest(*fields, reverse=True, **field_kwargs)
 
-    def latest(*fields, **field_kwargs):
-        return _earliest_or_latest(*fields, reverse=True, **field_kwargs)
-
-    mock_set.latest = MagicMock(side_effect=latest)
-
-    def first():
-        for item in items:
+    def first(self):
+        for item in self.items:
             return item
 
-    mock_set.first = MagicMock(side_effect=first)
+    def last(self):
+        return self.items and self.items[-1] or None
 
-    def last():
-        return items and items[-1] or None
-
-    mock_set.last = MagicMock(side_effect=last)
-
-    def __iter__():
-        return iter([items[i] for i, v in enumerate(items)])
-
-    mock_set.__iter__ = MagicMock(side_effect=__iter__)
-
-    def create(**attrs):
-        validate_mock_set(mock_set, **attrs)
+    def create(self, **attrs):
+        validate_mock_set(self, **attrs)
 
         # TODO: Determine the default value for each field and set it to that so django doesn't complain
         # for field in target_fields:
         #     if field not in attrs.keys():
         #         attrs[field] = None
 
-        obj = mock_set.model(**attrs)
-        add(obj)
+        obj = self.model(**attrs)
+        self.add(obj)
 
         return obj
 
-    mock_set.create = MagicMock(side_effect=create)
-
-    def update(**attrs):
-        validate_mock_set(mock_set, for_update=True, **attrs)
+    def update(self, **attrs):
+        validate_mock_set(self, for_update=True, **attrs)
 
         count = 0
-        for item in items:
+        for item in self.items:
             count += 1
             for k, v in attrs.items():
                 setattr(item, k, v)
-                fire(item, EVENT_UPDATED, EVENT_SAVED)
+                self.fire(item, self.EVENT_UPDATED, self.EVENT_SAVED)
 
         return count
 
-    mock_set.update = MagicMock(side_effect=update)
-
-    def _delete_recursive(*items_to_remove, **attrs):
+    def _delete_recursive(self, *items_to_remove, **attrs):
         for item in matches(*items_to_remove, **attrs):
-            items.remove(item)
-            fire(item, EVENT_DELETED)
+            self.items.remove(item)
+            self.fire(item, self.EVENT_DELETED)
 
-        if clone:
-            clone._delete_recursive(*items_to_remove, **attrs)
+        if self.clone is not None:
+            self.clone._delete_recursive(*items_to_remove, **attrs)
 
-    mock_set._delete_recursive = MagicMock(side_effect=_delete_recursive)
-
-    def delete(**attrs):
+    def delete(self, **attrs):
         # Delete normally doesn't take **attrs - they're only needed for remove
-        _delete_recursive(*items, **attrs)
-
-    mock_set.delete = MagicMock(side_effect=delete)
+        self._delete_recursive(*self.items, **attrs)
 
     # The following 2 methods were kept for backwards compatibility and
     # should be removed in the future since they are covered by filter & delete
-    mock_set.clear = MagicMock(side_effect=delete)
-    mock_set.remove = MagicMock(side_effect=delete)
+    def clear(self, **attrs):
+        return self.delete(**attrs)
 
-    def get(**attrs):
-        results = filter(**attrs)
+    def remove(self, **attrs):
+        return self.delete(**attrs)
+
+    def get(self, **attrs):
+        results = self.filter(**attrs)
         if not results.exists():
-            raise_does_not_exist()
+            self.raise_does_not_exist()
         elif results.count() > 1:
             raise MultipleObjectsReturned()
         else:
             return results[0]
 
-    mock_set.get = MagicMock(side_effect=get)
-
-    def get_or_create(defaults=None, **attrs):
+    def get_or_create(self, defaults=None, **attrs):
         if defaults is not None:
-            validate_mock_set(mock_set)
+            validate_mock_set(self)
         defaults = defaults or {}
         lookup = attrs.copy()
         attrs.update(defaults)
-        results = filter(**lookup)
+        results = self.filter(**lookup)
         if not results.exists():
-            return create(**attrs), True
+            return self.create(**attrs), True
         elif results.count() > 1:
             raise MultipleObjectsReturned()
         else:
             return results[0], False
 
-    mock_set.get_or_create = MagicMock(side_effect=get_or_create)
-
-    def values(*fields):
+    def values(self, *fields):
         result = []
-        for item in items:
+        for item in self.items:
             if len(fields) == 0:
                 field_names = [f.attname for f in item._meta.concrete_fields]
             else:
@@ -348,11 +308,9 @@ def MockSet(*initial_items, **kwargs):
 
             result.extend(item_dicts)
 
-        return MockSet(*result, clone=mock_set)
+        return MockSet(*result, clone=self)
 
-    mock_set.values = MagicMock(side_effect=values)
-
-    def values_list(*fields, **kwargs):
+    def values_list(self, *fields, **kwargs):
         flat = kwargs.pop('flat', False)
 
         if kwargs:
@@ -363,7 +321,7 @@ def MockSet(*initial_items, **kwargs):
             raise NotImplementedError('values_list() with no arguments is not implemented')
 
         result = []
-        for item in list(values(*fields)):
+        for item in list(self.values(*fields)):
             if flat:
                 result.append(item[fields[0]])
             else:
@@ -372,41 +330,33 @@ def MockSet(*initial_items, **kwargs):
                     data.append(item[key])
                 result.append(tuple(data))
 
-        return MockSet(*result, clone=mock_set)
+        return MockSet(*result, clone=self)
 
-    mock_set.values_list = MagicMock(side_effect=values_list)
-
-    def dates(field, kind, order='ASC'):
+    def dates(self, field, kind, order='ASC'):
         assert kind in ("year", "month", "day"), "'kind' must be one of 'year', 'month' or 'day'."
         assert order in ('ASC', 'DESC'), "'order' must be either 'ASC' or 'DESC'."
 
-        initial_values = list(values_list(field, flat=True))
+        initial_values = list(self.values_list(field, flat=True))
 
         return MockSet(*sorted(
             {truncate(x, kind) for x in initial_values},
             key=lambda y: datetime.date.timetuple(y)[:3],
             reverse=True if order == 'DESC' else False
-        ), clone=mock_set)
+        ), clone=self)
 
-    mock_set.dates = MagicMock(side_effect=dates)
-
-    def datetimes(field, kind, order='ASC'):
+    def datetimes(self, field, kind, order='ASC'):
         # TODO: Handle `tzinfo` parameter
         assert kind in ("year", "month", "day", "hour", "minute", "second"), \
             "'kind' must be one of 'year', 'month', 'day', 'hour', 'minute' or 'second'."
         assert order in ('ASC', 'DESC'), "'order' must be either 'ASC' or 'DESC'."
 
-        initial_values = list(values_list(field, flat=True))
+        initial_values = list(self.values_list(field, flat=True))
 
         return MockSet(*sorted(
             {truncate(x, kind) for x in initial_values},
             key=lambda y: datetime.datetime.timetuple(y)[:6],
             reverse=True if order == 'DESC' else False
-        ), clone=mock_set)
-
-    mock_set.datetimes = MagicMock(side_effect=datetimes)
-
-    return mock_set
+        ), clone=self)
 
 
 class MockModel(dict):
