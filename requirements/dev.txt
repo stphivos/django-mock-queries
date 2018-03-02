@@ -6,5 +6,4 @@ flake8==3.4.1
 coverage==3.7.1
 tox==2.1.1
 virtualenv==13.1.2
-djangorestframework==3.3.2
 pypandoc==1.4
