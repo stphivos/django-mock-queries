@@ -1,9 +1,10 @@
-from django.core.exceptions import ImproperlyConfigured
+from random import choice
+from string import ascii_letters
 
-try:
-    from model_mommy.generators import gen_string
-except ImproperlyConfigured:
-    from model_mommy.random_gen import gen_string
+
+def gen_string(max_length):
+    return str(''.join(choice(ascii_letters) for _ in range(max_length)))
+
 
 SECRET_KEY = gen_string(50)
 
