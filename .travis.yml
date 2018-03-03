@@ -7,28 +7,31 @@ matrix:
   include:
     - python: 2.7
       env:
-      - TOX_ENV=py27-dj18
-      - TOX_ENV=py27-dj19
-      - TOX_ENV=py27-dj110
-      - TOX_ENV=py27-dj111
+      - TOX_ENV=py27-dj18-drf33
+      - TOX_ENV=py27-dj19-drf33
+      - TOX_ENV=py27-dj110-drf33
+      - TOX_ENV=py27-dj111-drf37
     - python: 3.3
       env:
-      - TOX_ENV=py33-dj18
+      - TOX_ENV=py33-dj18-drf33
     - python: 3.4
       env:
-      - TOX_ENV=py34-dj18
-      - TOX_ENV=py34-dj19
-      - TOX_ENV=py34-dj110
-      - TOX_ENV=py34-dj111
+      - TOX_ENV=py34-dj18-drf33
+      - TOX_ENV=py34-dj19-drf33
+      - TOX_ENV=py34-dj110-drf33
+      - TOX_ENV=py34-dj111-drf37
+      - TOX_ENV=py34-dj20-drf37
     - python: 3.5
       env:
-      - TOX_ENV=py35-dj18
-      - TOX_ENV=py35-dj19
-      - TOX_ENV=py35-dj110
-      - TOX_ENV=py35-dj111
+      - TOX_ENV=py35-dj18-drf33
+      - TOX_ENV=py35-dj19-drf33
+      - TOX_ENV=py35-dj110-drf33
+      - TOX_ENV=py35-dj111-drf37
+      - TOX_ENV=py35-dj20-drf37
     - python: 3.6
       env:
-      - TOX_ENV=py36-dj111
+      - TOX_ENV=py36-dj111-drf37
+      - TOX_ENV=py36-dj20-drf37
 
 install:
   - travis_retry pip install "virtualenv<14.0.0" "tox>=1.9" "coverage<4"

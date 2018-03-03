@@ -1,4 +1,5 @@
 import sys
+import django
 from django.db import connection
 from django.db.utils import NotSupportedError
 from django.db.backends.base.creation import BaseDatabaseCreation
@@ -94,7 +95,11 @@ class MockOneToOneTests(TestCase):
 
     @patch.object(Car, 'sedan', MockOneToOneMap(Car.sedan))
     def test_delegation(self):
-        self.assertEqual(Car.sedan.cache_name, '_sedan_cache')
+        if django.VERSION[0] < 2:
+            self.assertEqual(Car.sedan.cache_name, '_sedan_cache')
+        else:
+            """ TODO - Refactored internal fields value cache: """
+            # https://github.com/django/django/commit/bfb746f983aa741afa3709794e70f1e0ab6040b5#diff-507b415116b409afa4f723e41a759a9e
 
 
 # noinspection PyUnresolvedReferences,PyStatementEffect

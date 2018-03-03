@@ -13,7 +13,7 @@ class ManufacturerSerializer(serializers.ModelSerializer):
 
 
 class Car(models.Model):
-    make = models.ForeignKey(Manufacturer)
+    make = models.ForeignKey(Manufacturer, on_delete=models.CASCADE)
     model = models.CharField(max_length=25, blank=True, null=True)
     speed = models.IntegerField()
 
@@ -29,7 +29,7 @@ class Car(models.Model):
 
 
 class CarVariation(models.Model):
-    car = models.ForeignKey(Car, related_name='variations')
+    car = models.ForeignKey(Car, related_name='variations', on_delete=models.CASCADE)
     color = models.CharField(max_length=100)
 
 
@@ -38,7 +38,7 @@ class Sedan(Car):
 
 
 class Passenger(models.Model):
-    car = models.ForeignKey(Car, related_name='passengers')
+    car = models.ForeignKey(Car, related_name='passengers', on_delete=models.CASCADE)
     name = models.CharField(max_length=25)
 
 

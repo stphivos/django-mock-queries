@@ -1,5 +1,4 @@
 import datetime
-from cached_property import cached_property
 from collections import OrderedDict
 from mock import Mock, MagicMock, PropertyMock
 
@@ -365,8 +364,10 @@ class MockSet(MagicMock):
 
 class MockModel(dict):
     def __init__(self, *args, **kwargs):
-        self.save = PropertyMock()
         super(MockModel, self).__init__(*args, **kwargs)
+
+        self.save = PropertyMock()
+        self.__meta = MockOptions(*self.get_fields())
 
     def __getattr__(self, item):
         return self.get(item, None)
@@ -380,11 +381,14 @@ class MockModel(dict):
     def __call__(self, *args, **kwargs):
         return MockModel(*args, **kwargs)
 
-    @cached_property
+    def get_fields(self):
+        skip_keys = ['save', '_MockModel__meta']
+        return [key for key in self.keys() if key not in skip_keys]
+
+    @property
     def _meta(self):
-        keys_list = list(self.keys())
-        keys_list.remove('save')
-        return MockOptions(*keys_list)
+        self.__meta.load_fields(*self.get_fields())
+        return self.__meta
 
     def __repr__(self):
         return self.get('mock_name', None) or super(MockModel, self).__repr__()
