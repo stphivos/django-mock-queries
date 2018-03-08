@@ -100,12 +100,24 @@ def mock_django_connection(disabled_features=None):
     Model.refresh_from_db = Mock()  # Make this into a noop.
 
 
-class MockOneToManyMap(object):
+class MockMap(object):
     def __init__(self, original):
         """ Wrap a mock mapping around the original one-to-many relation. """
         self.map = {}
         self.original = original
 
+    def __set__(self, instance, value):
+        """ Set a related object for an instance. """
+
+        self.map[id(instance)] = (weakref.ref(instance), value)
+
+    def __getattr__(self, name):
+        """ Delegate all other calls to the original. """
+
+        return getattr(self.original, name)
+
+
+class MockOneToManyMap(MockMap):
     def __get__(self, instance, owner):
         """ Look in the map to see if there is a related set.
 
@@ -129,23 +141,8 @@ class MockOneToManyMap(object):
 
         return related_objects
 
-    def __set__(self, instance, value):
-        """ Set a related object for an instance. """
 
-        self.map[id(instance)] = (weakref.ref(instance), value)
-
-    def __getattr__(self, name):
-        """ Delegate all other calls to the original. """
-
-        return getattr(self.original, name)
-
-
-class MockOneToOneMap(object):
-    def __init__(self, original):
-        """ Wrap a mock mapping around the original one-to-one relation. """
-        self.map = {}
-        self.original = original
-
+class MockOneToOneMap(MockMap):
     def __get__(self, instance, owner):
         """ Look in the map to see if there is a related object.
 
@@ -169,16 +166,6 @@ class MockOneToOneMap(object):
                 )
             )
         return related_object
-
-    def __set__(self, instance, value):
-        """ Set a related object for an instance. """
-
-        self.map[id(instance)] = (weakref.ref(instance), value)
-
-    def __getattr__(self, name):
-        """ Delegate all other calls to the original. """
-
-        return getattr(self.original, name)
 
 
 def find_all_models(models):
