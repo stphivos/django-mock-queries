@@ -24,13 +24,17 @@ from analytics import views
 
 @skipIfDBFeature('is_mocked')
 class TestApi(TestCase):
+    def setUp(self):
+        self.api = AnalyticsApi()
+
     def test_api_create_user(self):
-        start_count = User.objects.count()
+        _ = User.objects.create(username='plain1')
+        _ = User.objects.create(username='plain2')
+        staff1 = User.objects.create(username='staff1', is_staff=True)
+        staff2 = User.objects.create(username='staff2', is_staff=True)
 
-        User.objects.create(username='bob')
-        final_count = User.objects.count()
-
-        self.assertEqual(start_count + 1, final_count)
+        usernames = [str(x) for x in self.api.staff_usernames()]
+        self.assertEqual(usernames, [staff1.username, staff2.username])
 
 
 @mocked_relations(User)

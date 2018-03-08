@@ -13,3 +13,6 @@ class AnalyticsApi(object):
     def today_visitors_count(self):
         result = User.objects.filter(last_login__gte=date.today()).aggregate(Count('last_login'))
         return result['last_login__count']
+
+    def staff_usernames(self):
+        return User.objects.filter(is_staff=True).values_list('username', flat=True)
