@@ -24,13 +24,13 @@ from analytics import views
 
 @skipIfDBFeature('is_mocked')
 class TestApi(TestCase):
-    def test_create(self):
+    def test_api_create_user(self):
         start_count = User.objects.count()
 
         User.objects.create(username='bob')
         final_count = User.objects.count()
 
-        self.assertEqual(start_count+1, final_count)
+        self.assertEqual(start_count + 1, final_count)
 
 
 @mocked_relations(User)
@@ -51,7 +51,7 @@ class TestMockedApi(TestCase):
     def setUp(self):
         self.api = AnalyticsApi()
 
-    def test_api_active_users_filters_by_is_active_true(self):
+    def test_mocked_api_active_users_filters_by_is_active_true(self):
         active_user = MockModel(mock_name='active user', is_active=True)
         inactive_user = MockModel(mock_name='inactive user', is_active=False)
 
@@ -61,7 +61,7 @@ class TestMockedApi(TestCase):
         assert active_user in results
         assert inactive_user not in results
 
-    def test_api_create_user(self):
+    def test_mocked_api_create_user(self):
         attrs = dict((k, v) for (k, v) in mommy.prepare(User).__dict__.items() if k[0] != '_')
         user = self.api.create_user(**attrs)
         assert isinstance(user, User)
@@ -69,7 +69,7 @@ class TestMockedApi(TestCase):
         for k, v in attrs.items():
             assert getattr(user, k) == v
 
-    def test_api_today_visitors_counts_todays_logins(self):
+    def test_mocked_api_today_visitors_counts_todays_logins(self):
         past_visitors = [
             MockModel(last_login=(date.today() - timedelta(days=1))),
             MockModel(last_login=(date.today() - timedelta(days=2))),
@@ -91,10 +91,10 @@ class TestMockedApi(TestCase):
 # raise a helpful error when run with "--settings=users.settings_mocked".
 @mocked_relations(User)
 class TestMockedUser(TestCase):
-    def test_create(self):
+    def test_mocked_user_create(self):
         start_count = User.objects.count()
 
         User.objects.create(username='bob')
         final_count = User.objects.count()
 
-        self.assertEqual(start_count+1, final_count)
+        self.assertEqual(start_count + 1, final_count)
