@@ -335,17 +335,20 @@ class MockSet(MagicMock):
 
         return MockSet(*result, clone=self)
 
-    def dates(self, field, kind, order='ASC'):
-        assert kind in ("year", "month", "day"), "'kind' must be one of 'year', 'month' or 'day'."
-        assert order in ('ASC', 'DESC'), "'order' must be either 'ASC' or 'DESC'."
-
+    def _date_values(self, field, kind, order, key_func):
         initial_values = list(self.values_list(field, flat=True))
 
         return MockSet(*sorted(
             {truncate(x, kind) for x in initial_values},
-            key=lambda y: datetime.date.timetuple(y)[:3],
+            key=key_func,
             reverse=True if order == 'DESC' else False
         ), clone=self)
+
+    def dates(self, field, kind, order='ASC'):
+        assert kind in ("year", "month", "day"), "'kind' must be one of 'year', 'month' or 'day'."
+        assert order in ('ASC', 'DESC'), "'order' must be either 'ASC' or 'DESC'."
+
+        return self._date_values(field, kind, order, lambda y: datetime.date.timetuple(y)[:3])
 
     def datetimes(self, field, kind, order='ASC'):
         # TODO: Handle `tzinfo` parameter
@@ -353,13 +356,7 @@ class MockSet(MagicMock):
             "'kind' must be one of 'year', 'month', 'day', 'hour', 'minute' or 'second'."
         assert order in ('ASC', 'DESC'), "'order' must be either 'ASC' or 'DESC'."
 
-        initial_values = list(self.values_list(field, flat=True))
-
-        return MockSet(*sorted(
-            {truncate(x, kind) for x in initial_values},
-            key=lambda y: datetime.datetime.timetuple(y)[:6],
-            reverse=True if order == 'DESC' else False
-        ), clone=self)
+        return self._date_values(field, kind, order, lambda y: datetime.datetime.timetuple(y)[:6])
 
 
 class MockModel(dict):

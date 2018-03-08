@@ -356,11 +356,16 @@ class Mocker(object):
     def key(self, method, obj=None):
         return '{}.{}'.format(obj or self.cls, method)
 
+    def _method_obj(self, name, obj, *sources):
+        d = {}
+        [d.update(s) for s in sources]
+        return d[self.key(name, obj=obj)]
+
     def method(self, name, obj=None):
-        return dict(self.shared_mocks, **self.inst_mocks)[self.key(name, obj=obj)]
+        return self._method_obj(name, obj, self.shared_mocks, self.inst_mocks)
 
     def original_method(self, name, obj=None):
-        return dict(self.shared_original, **self.inst_original)[self.key(name, obj=obj)]
+        return self._method_obj(name, obj, self.shared_original, self.inst_original)
 
     def get_source_method(self, obj, method):
         source_obj = obj
