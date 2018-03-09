@@ -17,83 +17,96 @@ def intersect(first, second):
     return list(set(first).intersection(second))
 
 
-# noinspection PyProtectedMember
-def find_field_names(obj, **kwargs):
-    def names(field):
-        name = field.get_accessor_name()
-        model_name = field.related_model._meta.model_name.lower()
+def get_field_mapping(field):
+    name = field.get_accessor_name()
+    model_name = field.related_model._meta.model_name.lower()
 
-        if name[-4:] == '_set':
-            return {model_name: name}
-        else:
-            return {name: name}
+    if name[-4:] == '_set':
+        return {model_name: name}
+    else:
+        return {name: name}
 
-    if not hasattr(obj, '_meta'):
-        if type(obj) is dict:
-            field_names = list(obj.keys())
-            return field_names, field_names
 
+def find_field_names_from_meta(meta):
+    field_names = {}
+
+    field_names.update({key: key for key in meta._forward_fields_map.keys()})
+    [field_names.update(get_field_mapping(field)) for field in meta.fields_map.values()]
+
+    for parent in meta.parents.keys():
+        field_names.update({key: key for key in find_field_names(parent)[0]})
+
+    return list(field_names.keys()), list(field_names.values())
+
+
+def find_field_names_from_obj(obj):
+    lookup_fields, actual_fields = [], []
+
+    if type(obj) is dict:
+        lookup_fields = actual_fields = list(obj.keys())
+    else:
         # It is possibly a MockSet.
         use_obj = getattr(obj, 'model', None)
 
         # Make it easier for MockSet, but Django's QuerySet will always have a model.
         if not use_obj and is_list_like_iter(obj) and len(obj) > 0:
-            return find_field_names(obj[0], **kwargs)
+            lookup_fields, actual_fields = find_field_names(obj[0])
 
-    field_names = {}
+    return lookup_fields, actual_fields
 
+
+# noinspection PyProtectedMember
+def find_field_names(obj):
     if hasattr(obj, '_meta'):
-        field_names.update({key: key for key in obj._meta._forward_fields_map.keys()})
-        [field_names.update(names(field)) for field in obj._meta.fields_map.values()]
+        lookup_fields, actual_fields = find_field_names_from_meta(obj._meta)
+    else:
+        lookup_fields, actual_fields = find_field_names_from_obj(obj)
 
-        for parent in obj._meta.parents.keys():
-            field_names.update({key: key for key in find_field_names(parent)[0]})
-
-    return list(field_names.keys()), list(field_names.values())
+    return lookup_fields, actual_fields
 
 
-def get_attribute(obj, attr, default=None, **kwargs):
+def validate_field(field_name, model_fields):
+    if field_name != 'pk' and field_name not in model_fields:
+        message = "Cannot resolve keyword '{}' into field. Choices are {}.".format(
+            field_name,
+            ', '.join(map(repr, map(str, sorted(model_fields))))
+        )
+        raise FieldError(message)
+
+
+def get_field_value(obj, field_name):
+    if type(obj) is dict:
+        return obj[field_name]
+    elif is_list_like_iter(obj):
+        return [get_attribute(x, field_name)[0] for x in obj]
+    else:
+        return getattr(obj, field_name, None)
+
+
+def get_attribute(obj, attr, default=None):
     result = obj
     comparison = None
     parts = attr.split('__')
 
-    for i, nested_field in enumerate(parts):
-        if nested_field in COMPARISONS:
-            comparison = nested_field
-        elif nested_field in DATETIME_COMPARISONS and (isinstance(result, date) or isinstance(result, datetime)):
-            try:
-                comparison = (parts[i], parts[i + 1])
-                break
-            except IndexError:
-                comparison = (parts[i], COMPARISON_EXACT)
-                break
+    for i, attr_part in enumerate(parts):
+        if attr_part in COMPARISONS:
+            comparison = attr_part
+        elif attr_part in DATETIME_COMPARISONS and type(result) in [date, datetime]:
+            comparison_type = parts[i + 1] if i + 1 < len(parts) else COMPARISON_EXACT
+            comparison = (attr_part, comparison_type)
+            break
         elif result is None:
             break
         else:
-            lookup_fields, target_fields = find_field_names(result, **kwargs)
+            lookup_fields, actual_fields = find_field_names(result)
 
-            if nested_field != 'pk' and lookup_fields and nested_field not in lookup_fields:
-                message = "Cannot resolve keyword '{}' into field. Choices are {}.".format(
-                    nested_field,
-                    ', '.join(map(repr, map(str, sorted(lookup_fields))))
-                )
-                raise FieldError(message)
+            if lookup_fields:
+                validate_field(attr_part, lookup_fields)
 
-            if nested_field in lookup_fields:
-                target_field = target_fields[lookup_fields.index(nested_field)]
-            else:
-                target_field = nested_field
+            field = actual_fields[lookup_fields.index(attr_part)] if attr_part in lookup_fields else attr_part
+            result = get_field_value(result, field)
 
-            if type(result) is dict:
-                result = result[target_field]
-            elif is_list_like_iter(result):
-                result = [get_attribute(x, target_field)[0] for x in result]
-            else:
-                result = getattr(result, target_field, None)
-
-    value = result if result is not None else default
-
-    return value, comparison
+    return result or default, comparison
 
 
 def is_match(first, second, comparison=None):
@@ -165,40 +178,37 @@ def is_match_in_children(comparison, first, second):
                for item in first)
 
 
+def is_disqualified(obj, attrs, negated):
+    for attr_name, filter_value in attrs.items():
+        attr_value, comparison = get_attribute(obj, attr_name)
+        match = is_match(attr_value, filter_value, comparison)
+
+        if (match and negated) or (not match and not negated):
+            return True
+
+    return False
+
+
 def matches(*source, **attrs):
-    exclude = []
     negated = attrs.pop('negated', False)
+    disqualified = [x for x in source if is_disqualified(x, attrs, negated)]
 
-    for x in source:
-        for attr_name, filter_value in attrs.items():
-            attr_value, comparison = get_attribute(x, attr_name)
-            match = is_match(attr_value, filter_value, comparison)
-
-            if (match and negated) or (not match and not negated):
-                exclude.append(x)
-                break
-
-    for x in source:
-        if x not in exclude:
-            yield x
+    return [x for x in source if x not in disqualified]
 
 
 def validate_mock_set(mock_set, for_update=False, **fields):
     if mock_set.model is None:
         raise ModelNotSpecified()
 
-    lookup_fields, target_fields = find_field_names(mock_set.model)
+    _, actual_fields = find_field_names(mock_set.model)
 
-    if fields:
-        for k in fields.keys():
-            if '__' in k and for_update:
-                raise FieldError(
-                    'Cannot update model field %r (only non-relations and foreign keys permitted).' % k
-                )
-            if k not in target_fields:
-                raise ValueError('{} is an invalid keyword argument for this function'.format(k))
-
-    return lookup_fields, target_fields
+    for k in fields.keys():
+        if '__' in k and for_update:
+            raise FieldError(
+                'Cannot update model field %r (only non-relations and foreign keys permitted).' % k
+            )
+        if k not in actual_fields:
+            raise ValueError('{} is an invalid keyword argument for this function'.format(k))
 
 
 def validate_date_or_datetime(value, comparison):

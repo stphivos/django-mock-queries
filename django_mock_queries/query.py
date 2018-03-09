@@ -60,12 +60,19 @@ class MockSet(MagicMock):
         assert event in self.SUPPORTED_EVENTS, event
         self.events[event] = self.events.get(event, []) + [handler]
 
+    def register_fields(self, obj):
+        if not (isinstance(obj, MockModel) or isinstance(obj, Mock)):
+            return
+
+        for f in self.model._meta.fields:
+            if f.name not in obj.keys():
+                setattr(obj, f.name, None)
+
     def add(self, *models):
-        # Initialize MockModel default fields from MockSet model fields if defined
         if self.model:
-            for model in models:
-                if isinstance(model, MockModel) or isinstance(model, Mock):
-                    [setattr(model, f.name, None) for f in self.model._meta.fields if f.name not in model.keys()]
+            # Initialize MockModel default fields from MockSet model fields if defined
+            for obj in models:
+                self.register_fields(obj)
 
         for model in models:
             self.items.append(model)
@@ -78,7 +85,7 @@ class MockSet(MagicMock):
             if isinstance(child, DjangoQ):
                 filtered = self.filter_q(source, child)
             else:
-                filtered = list(matches(negated=query.negated, *source, **{child[0]: child[1]}))
+                filtered = matches(negated=query.negated, *source, **{child[0]: child[1]})
 
             if filtered:
                 if not results or query.connector == CONNECTORS_OR:
@@ -213,11 +220,6 @@ class MockSet(MagicMock):
 
     def create(self, **attrs):
         validate_mock_set(self, **attrs)
-
-        # TODO: Determine the default value for each field and set it to that so django doesn't complain
-        # for field in target_fields:
-        #     if field not in attrs.keys():
-        #         attrs[field] = None
 
         obj = self.model(**attrs)
         self.add(obj)
