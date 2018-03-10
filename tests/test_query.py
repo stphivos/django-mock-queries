@@ -584,7 +584,7 @@ class TestQuery(TestCase):
             model=create_model('first', 'second', 'third')
         )
         attrs = dict(first=1, second=2, third=3, fourth=4)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(FieldError):
             qs.create(**attrs)
 
     def test_query_update_returns_number_of_affected_rows(self):

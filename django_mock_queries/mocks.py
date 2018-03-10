@@ -15,6 +15,9 @@ from types import MethodType
 from .constants import DjangoModelDeletionCollector, DjangoDbRouter
 from .query import MockSet
 
+# noinspection PyUnresolvedReferences
+patch_object = patch.object
+
 
 def monkey_patch_test_db(disabled_features=None):
     """ Replace the real database connection with a mock one.
@@ -178,6 +181,32 @@ def find_all_models(models):
                 yield parent_model
 
 
+def _patch_save(model, name):
+    return patch_object(
+        model,
+        'save',
+        new_callable=partial(Mock, name=name + '.save')
+    )
+
+
+def _patch_objects(model, name):
+    return patch_object(
+        model, 'objects',
+        new_callable=partial(MockSet, mock_name=name + '.objects', model=model)
+    )
+
+
+def _patch_relation(model, name, related_object):
+    relation = getattr(model, name)
+
+    if related_object.one_to_one:
+        new_callable = partial(MockOneToOneMap, relation)
+    else:
+        new_callable = partial(MockOneToManyMap, relation)
+
+    return patch_object(model, name, new_callable=new_callable)
+
+
 # noinspection PyProtectedMember
 def mocked_relations(*models):
     """ Mock all related field managers to make pure unit tests possible.
@@ -191,38 +220,33 @@ def mocked_relations(*models):
         dataset = Dataset()
         check = dataset.content_checks.create()  # returns a ContentCheck object
     """
-    # noinspection PyUnresolvedReferences
-    patch_object = patch.object
     patchers = []
+
     for model in find_all_models(models):
         if isinstance(model.save, Mock):
             # already mocked, so skip it
             continue
+
         model_name = model._meta.object_name
-        patchers.append(patch_object(model, 'save', new_callable=partial(
-            Mock,
-            name=model_name + '.save')))
+        patchers.append(_patch_save(model, model_name))
+
         if hasattr(model, 'objects'):
-            patchers.append(patch_object(model, 'objects', new_callable=partial(
-                MockSet,
-                mock_name=model_name + '.objects',
-                model=model)))
+            patchers.append(_patch_objects(model, model_name))
+
         for related_object in chain(model._meta.related_objects,
                                     model._meta.many_to_many):
             name = related_object.name
+
             if name not in model.__dict__ and related_object.one_to_many:
                 name += '_set'
+
             if name in model.__dict__:
                 # Only mock direct relations, not inherited ones.
-                old_relation = getattr(model, name, None)
-                if old_relation is not None:
-                    if related_object.one_to_one:
-                        new_callable = partial(MockOneToOneMap, old_relation)
-                    else:
-                        new_callable = partial(MockOneToManyMap, old_relation)
-                    patchers.append(patch_object(model,
-                                                 name,
-                                                 new_callable=new_callable))
+                if getattr(model, name, None):
+                    patchers.append(_patch_relation(
+                        model, name, related_object
+                    ))
+
     return PatcherChain(patchers, pass_mocks=False)
 
 
@@ -320,7 +344,7 @@ class Mocker(object):
         self.outer = kwargs.get('outer', True)
 
     def __enter__(self):
-        self.patch_object_methods(self.cls, *self.methods)
+        self._patch_object_methods(self.cls, *self.methods)
         return self
 
     def __call__(self, func):
@@ -340,13 +364,13 @@ class Mocker(object):
             for key, patcher in self.shared_patchers.items():
                 patcher.stop()
 
-    def key(self, method, obj=None):
+    def _key(self, method, obj=None):
         return '{}.{}'.format(obj or self.cls, method)
 
     def _method_obj(self, name, obj, *sources):
         d = {}
         [d.update(s) for s in sources]
-        return d[self.key(name, obj=obj)]
+        return d[self._key(name, obj=obj)]
 
     def method(self, name, obj=None):
         return self._method_obj(name, obj, self.shared_mocks, self.inst_mocks)
@@ -354,7 +378,7 @@ class Mocker(object):
     def original_method(self, name, obj=None):
         return self._method_obj(name, obj, self.shared_original, self.inst_original)
 
-    def get_source_method(self, obj, method):
+    def _get_source_method(self, obj, method):
         source_obj = obj
         parts = method.split('.')
 
@@ -367,29 +391,32 @@ class Mocker(object):
 
         return source_obj, source_method
 
-    def patch_object_methods(self, obj, *methods, **kwargs):
-        for method in methods:
-            if kwargs.get('shared', False):
-                original, patchers, mocks = self.shared_original, self.shared_patchers, self.shared_mocks
-            else:
-                original, patchers, mocks = self.inst_original, self.inst_patchers, self.inst_mocks
+    def _patch_method(self, method_name, source_obj, source_method):
+        target_name = '_'.join(method_name.split('.'))
+        target_obj = getattr(self, target_name, None)
 
-            key = self.key(method, obj=obj)
-            source_obj, source_method = self.get_source_method(obj, method)
+        if target_obj is None:
+            mock_args = dict(new=MagicMock())
+        elif type(target_obj) == MethodType:
+            mock_args = dict(new=MagicMock(autospec=True, side_effect=target_obj))
+        else:
+            mock_args = dict(new=PropertyMock(return_value=target_obj))
+
+        return patch_object(source_obj, source_method, **mock_args)
+
+    def _patch_object_methods(self, obj, *methods, **kwargs):
+        if kwargs.get('shared', False):
+            original, patchers, mocks = self.shared_original, self.shared_patchers, self.shared_mocks
+        else:
+            original, patchers, mocks = self.inst_original, self.inst_patchers, self.inst_mocks
+
+        for method in methods:
+            key = self._key(method, obj=obj)
+
+            source_obj, source_method = self._get_source_method(obj, method)
             original[key] = original.get(key, None) or getattr(source_obj, source_method)
 
-            target_name = '_'.join(method.split('.'))
-            target_obj = getattr(self, target_name, None)
-
-            if target_obj is None:
-                mock_args = dict(new=MagicMock())
-            elif type(target_obj) == MethodType:
-                mock_args = dict(new=MagicMock(autospec=True, side_effect=target_obj))
-            else:
-                mock_args = dict(new=PropertyMock(return_value=target_obj))
-
-            patcher = patch.object(source_obj, source_method, **mock_args)
-
+            patcher = self._patch_method(method, source_obj, source_method)
             patchers[key] = patcher
             mocks[key] = patcher.start()
 
@@ -411,7 +438,7 @@ class ModelMocker(Mocker):
 
     def __enter__(self):
         result = super(ModelMocker, self).__enter__()
-        self.patch_object_methods(DjangoModelDeletionCollector, 'collect', 'delete', shared=True)
+        self._patch_object_methods(DjangoModelDeletionCollector, 'collect', 'delete', shared=True)
         return result
 
     def _obj_pk(self, obj):
@@ -427,7 +454,8 @@ class ModelMocker(Mocker):
 
         return self._obj_pk(obj)
 
-    def _do_update(self, _, __, pk_val, values, *___, **____):
+    def _do_update(self, *args, **_):
+        _, _, pk_val, values, _, _ = args
         objects = self.objects.filter(pk=pk_val)
 
         if objects.exists():

@@ -65,7 +65,11 @@ def find_field_names(obj):
     return lookup_fields, actual_fields
 
 
-def validate_field(field_name, model_fields):
+def validate_field(field_name, model_fields, for_update=False):
+    if '__' in field_name and for_update:
+        raise FieldError(
+            'Cannot update model field %r (only non-relations and foreign keys permitted).' % field_name
+        )
     if field_name != 'pk' and field_name not in model_fields:
         message = "Cannot resolve keyword '{}' into field. Choices are {}.".format(
             field_name,
@@ -203,12 +207,7 @@ def validate_mock_set(mock_set, for_update=False, **fields):
     _, actual_fields = find_field_names(mock_set.model)
 
     for k in fields.keys():
-        if '__' in k and for_update:
-            raise FieldError(
-                'Cannot update model field %r (only non-relations and foreign keys permitted).' % k
-            )
-        if k not in actual_fields:
-            raise ValueError('{} is an invalid keyword argument for this function'.format(k))
+        validate_field(k, actual_fields, for_update)
 
 
 def validate_date_or_datetime(value, comparison):
