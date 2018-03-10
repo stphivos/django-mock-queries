@@ -30,7 +30,7 @@ class MockSet(MagicMock):
         model = kwargs.pop('model', None)
 
         for x in self.RETURN_SELF_METHODS:
-            kwargs.update({x: self.return_self})
+            kwargs.update({x: self._return_self})
 
         super(MockSet, self).__init__(spec=DjangoQuerySet, **kwargs)
 
@@ -45,7 +45,7 @@ class MockSet(MagicMock):
         self.__iter__ = lambda s: iter(s.items)
         self.__getitem__ = lambda s, k: self.items[k]
 
-    def return_self(self, *args, **kwargs):
+    def _return_self(self, *_, **__):
         return self
 
     def count(self):
@@ -60,7 +60,7 @@ class MockSet(MagicMock):
         assert event in self.SUPPORTED_EVENTS, event
         self.events[event] = self.events.get(event, []) + [handler]
 
-    def register_fields(self, obj):
+    def _register_fields(self, obj):
         if not (isinstance(obj, MockModel) or isinstance(obj, Mock)):
             return
 
@@ -72,20 +72,23 @@ class MockSet(MagicMock):
         if self.model:
             # Initialize MockModel default fields from MockSet model fields if defined
             for obj in models:
-                self.register_fields(obj)
+                self._register_fields(obj)
 
         for model in models:
             self.items.append(model)
             self.fire(model, self.EVENT_ADDED, self.EVENT_SAVED)
 
-    def filter_q(self, source, query):
+    def _filter_single_q(self, source, q_obj, negated):
+        if isinstance(q_obj, DjangoQ):
+            return self._filter_q(source, q_obj)
+        else:
+            return matches(negated=negated, *source, **{q_obj[0]: q_obj[1]})
+
+    def _filter_q(self, source, query):
         results = []
 
         for child in query.children:
-            if isinstance(child, DjangoQ):
-                filtered = self.filter_q(source, child)
-            else:
-                filtered = matches(negated=query.negated, *source, **{child[0]: child[1]})
+            filtered = self._filter_single_q(source, child, query.negated)
 
             if filtered:
                 if not results or query.connector == CONNECTORS_OR:
@@ -93,7 +96,7 @@ class MockSet(MagicMock):
                 else:
                     results = intersect(results, filtered)
             elif query.connector == CONNECTORS_AND:
-                return filtered
+                return []
 
         return results
 
@@ -101,7 +104,7 @@ class MockSet(MagicMock):
         results = list(self.items)
         for x in args:
             if isinstance(x, DjangoQ):
-                results = self.filter_q(results, x)
+                results = self._filter_q(results, x)
             else:
                 raise ArgumentNotSupported()
         return MockSet(*matches(*results, **attrs), clone=self)
@@ -164,18 +167,11 @@ class MockSet(MagicMock):
                 results[key] = item
         return MockSet(*results.values(), clone=self)
 
-    def raise_does_not_exist(self):
+    def _raise_does_not_exist(self):
         does_not_exist = getattr(self.model, 'DoesNotExist', ObjectDoesNotExist)
         raise does_not_exist()
 
-    def _earliest_or_latest(self, *fields, **field_kwargs):
-        """
-        Mimic Django's behavior
-        https://github.com/django/django/blob/746caf3ef821dbf7588797cb2600fa81b9df9d1d/django/db/models/query.py#L560
-        """
-        field_name = field_kwargs.get('field_name', None)
-        reverse = field_kwargs.get('reverse', False)
-
+    def _get_order_fields(self, fields, field_name):
         if fields and field_name is not None:
             raise ValueError('Cannot use both positional arguments and the field_name keyword argument.')
 
@@ -195,13 +191,25 @@ class MockSet(MagicMock):
                 "arguments or 'get_latest_by' in the model's Meta."
             )
 
+        return order_fields
+
+    def _earliest_or_latest(self, *fields, **field_kwargs):
+        """
+        Mimic Django's behavior
+        https://github.com/django/django/blob/746caf3ef821dbf7588797cb2600fa81b9df9d1d/django/db/models/query.py#L560
+        """
+        field_name = field_kwargs.get('field_name', None)
+        reverse = field_kwargs.get('reverse', False)
+        order_fields = self._get_order_fields(fields, field_name)
+
         results = sorted(
             self.items,
             key=lambda obj: tuple(get_attribute(obj, key) for key in order_fields),
             reverse=reverse,
         )
+
         if len(results) == 0:
-            self.raise_does_not_exist()
+            self._raise_does_not_exist()
 
         return results[0]
 
@@ -261,7 +269,7 @@ class MockSet(MagicMock):
     def get(self, **attrs):
         results = self.filter(**attrs)
         if not results.exists():
-            self.raise_does_not_exist()
+            self._raise_does_not_exist()
         elif results.count() > 1:
             raise MultipleObjectsReturned()
         else:
@@ -281,39 +289,53 @@ class MockSet(MagicMock):
         else:
             return results[0], False
 
+    def _item_values(self, item, fields):
+        field_buckets = {}
+        result_count = 1
+
+        if len(fields) == 0:
+            field_names = [f.attname for f in item._meta.concrete_fields]
+        else:
+            field_names = list(fields)
+
+        for field in sorted(field_names, key=lambda k: k.count('__')):
+            value = get_attribute(item, field)[0]
+
+            if is_list_like_iter(value):
+                value = flatten_list(value)
+                result_count = max(result_count, len(value))
+
+                for bucket, data in field_buckets.items():
+                    while len(data) < result_count:
+                        data.append(data[-1])
+
+                field_buckets[field] = value
+            else:
+                field_buckets[field] = [value]
+
+        item_values = []
+        for i in range(result_count):
+            item_values.append({k: v[i] for k, v in field_buckets.items()})
+
+        return item_values
+
     def values(self, *fields):
         result = []
+
         for item in self.items:
-            if len(fields) == 0:
-                field_names = [f.attname for f in item._meta.concrete_fields]
-            else:
-                field_names = list(fields)
-
-            field_buckets = {}
-            result_count = 1
-
-            for field in sorted(field_names, key=lambda k: k.count('__')):
-                value = get_attribute(item, field)[0]
-
-                if is_list_like_iter(value):
-                    value = flatten_list(value)
-                    result_count = max(result_count, len(value))
-
-                    for bucket, data in field_buckets.items():
-                        while len(data) < result_count:
-                            data.append(data[-1])
-
-                    field_buckets[field] = value
-                else:
-                    field_buckets[field] = [value]
-
-            item_dicts = []
-            for i in range(result_count):
-                item_dicts.append({k: v[i] for k, v in field_buckets.items()})
-
-            result.extend(item_dicts)
+            item_values = self._item_values(item, fields)
+            result.extend(item_values)
 
         return MockSet(*result, clone=self)
+
+    def _item_values_list(self, values_dict, fields, flat):
+        if flat:
+            return values_dict[fields[0]]
+        else:
+            data = []
+            for key in sorted(values_dict.keys(), key=lambda k: fields.index(k)):
+                data.append(values_dict[key])
+            return tuple(data)
 
     def values_list(self, *fields, **kwargs):
         flat = kwargs.pop('flat', False)
@@ -326,14 +348,10 @@ class MockSet(MagicMock):
             raise NotImplementedError('values_list() with no arguments is not implemented')
 
         result = []
-        for item in list(self.values(*fields)):
-            if flat:
-                result.append(item[fields[0]])
-            else:
-                data = []
-                for key in sorted(item.keys(), key=lambda k: fields.index(k)):
-                    data.append(item[key])
-                result.append(tuple(data))
+        item_values_dicts = list(self.values(*fields))
+
+        for values_dict in item_values_dicts:
+            result.append(self._item_values_list(values_dict, fields, flat))
 
         return MockSet(*result, clone=self)
 
