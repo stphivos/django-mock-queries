@@ -27,19 +27,30 @@ def get_field_mapping(field):
         return {name: name}
 
 
-def find_field_names_from_meta(meta):
+def find_field_names_from_meta(meta, **kwargs):
     field_names = {}
+    concrete_only = kwargs.get('concrete_only', False)
 
-    field_names.update({key: key for key in meta._forward_fields_map.keys()})
-    [field_names.update(get_field_mapping(field)) for field in meta.fields_map.values()]
+    if concrete_only:
+        fields_no_mapping = [f.attname for f in meta.concrete_fields]
+        fields_with_mapping = []
+    else:
+        fields_no_mapping = [f for f in meta._forward_fields_map.keys()]
+        fields_with_mapping = [f for f in meta.fields_map.values()]
 
-    for parent in meta.parents.keys():
-        field_names.update({key: key for key in find_field_names(parent)[0]})
+        for parent in meta.parents.keys():
+            fields_no_mapping.extend([key for key in find_field_names(parent)[0]])
+
+    for field in fields_no_mapping:
+        field_names[field] = field
+
+    for field in fields_with_mapping:
+        field_names.update(get_field_mapping(field))
 
     return list(field_names.keys()), list(field_names.values())
 
 
-def find_field_names_from_obj(obj):
+def find_field_names_from_obj(obj, **kwargs):
     lookup_fields, actual_fields = [], []
 
     if type(obj) is dict:
@@ -50,17 +61,16 @@ def find_field_names_from_obj(obj):
 
         # Make it easier for MockSet, but Django's QuerySet will always have a model.
         if not use_obj and is_list_like_iter(obj) and len(obj) > 0:
-            lookup_fields, actual_fields = find_field_names(obj[0])
+            lookup_fields, actual_fields = find_field_names(obj[0], **kwargs)
 
     return lookup_fields, actual_fields
 
 
-# noinspection PyProtectedMember
-def find_field_names(obj):
+def find_field_names(obj, **kwargs):
     if hasattr(obj, '_meta'):
-        lookup_fields, actual_fields = find_field_names_from_meta(obj._meta)
+        lookup_fields, actual_fields = find_field_names_from_meta(obj._meta, **kwargs)
     else:
-        lookup_fields, actual_fields = find_field_names_from_obj(obj)
+        lookup_fields, actual_fields = find_field_names_from_obj(obj, **kwargs)
 
     return lookup_fields, actual_fields
 
@@ -266,4 +276,7 @@ def truncate(obj, kind):
 
 
 def hash_dict(obj, *fields):
-    return hash(tuple(sorted((k, v) for k, v in obj.items() if not fields or k in fields)))
+    field_names = fields or find_field_names(obj, concrete_only=True)[1]
+    obj_values = {f: get_field_value(obj, f) for f in field_names}
+
+    return hash(tuple(sorted((k, v) for k, v in obj_values.items() if not fields or k in fields)))

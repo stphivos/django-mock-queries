@@ -535,7 +535,17 @@ class TestQuery(TestCase):
 
         assert results == [item_1, item_2, item_3], results
 
-    def test_query_values_distinct(self):
+    def test_query_distinct_django_model(self):
+        item_1 = Car(speed=1)
+        item_2 = Car(speed=2)
+        item_3 = Car(speed=3)
+
+        self.mock_set.add(item_2, item_3, item_1, item_3)
+        results = list(self.mock_set.distinct().order_by('speed'))
+
+        assert results == [item_1, item_2, item_3], results
+
+    def test_query_distinct_values(self):
         item_1 = MockModel(foo=1, mock_name='item_1')
         item_2 = MockModel(foo=2, mock_name='item_2')
         item_3 = MockModel(foo=3, mock_name='item_3')
@@ -557,6 +567,16 @@ class TestQuery(TestCase):
 
         self.mock_set.add(item_2, item_3, item_1, item_3)
         results = list(self.mock_set.order_by('foo', 'bar', 'foo_bar').distinct('foo', 'bar'))
+
+        assert results == [item_1, item_2], results
+
+    def test_query_distinct_django_model_with_fields(self):
+        item_1 = Car(speed=1, model='a')
+        item_2 = Car(speed=2, model='b')
+        item_3 = Car(speed=1, model='c')
+
+        self.mock_set.add(item_2, item_3, item_1, item_3)
+        results = list(self.mock_set.order_by('speed', 'model').distinct('speed'))
 
         assert results == [item_1, item_2], results
 
