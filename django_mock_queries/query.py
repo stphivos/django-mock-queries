@@ -289,7 +289,6 @@ class MockSet(MagicMock):
         else:
             return results[0], False
 
-
     def update_or_create(self, defaults=None, **attrs):
         if defaults is not None:
             validate_mock_set(self)
@@ -308,7 +307,6 @@ class MockSet(MagicMock):
                 self.fire(obj, self.EVENT_UPDATED, self.EVENT_SAVED)
             return obj, False
 
-    
     def _item_values(self, item, fields):
         field_buckets = {}
         result_count = 1

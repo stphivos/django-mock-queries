@@ -855,7 +855,7 @@ class TestQuery(TestCase):
         assert hasattr(obj, 'second') and obj.second == 1
         assert hasattr(obj, 'third') and obj.third is None
         assert created is True
-    
+
     def test_query_update_or_create_updates_match_with_defaults(self):
         qs = MockSet(
             model=create_model('first', 'second', 'third')
