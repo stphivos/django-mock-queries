@@ -308,7 +308,7 @@ class MockSet(MagicMock):
                 self.fire(obj, self.EVENT_UPDATED, self.EVENT_SAVED)
             return obj, False
 
-
+    
     def _item_values(self, item, fields):
         field_buckets = {}
         result_count = 1
