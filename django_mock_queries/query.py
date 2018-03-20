@@ -289,6 +289,26 @@ class MockSet(MagicMock):
         else:
             return results[0], False
 
+
+    def update_or_create(self, defaults=None, **attrs):
+        if defaults is not None:
+            validate_mock_set(self)
+        defaults = defaults or {}
+        lookup = attrs.copy()
+        attrs.update(defaults)
+        results = self.filter(**lookup)
+        if not results.exists():
+            return self.create(**attrs), True
+        elif results.count() > 1:
+            raise MultipleObjectsReturned()
+        else:
+            obj = results[0]
+            for k, v in attrs.items():
+                setattr(obj, k, v)
+                self.fire(obj, self.EVENT_UPDATED, self.EVENT_SAVED)
+            return obj, False
+
+    
     def _item_values(self, item, fields):
         field_buckets = {}
         result_count = 1
