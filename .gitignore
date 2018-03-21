@@ -10,3 +10,4 @@ dist/
 MANIFEST
 patches.py
 db.sqlite3
+.python-version

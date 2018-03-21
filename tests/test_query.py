@@ -782,6 +782,106 @@ class TestQuery(TestCase):
         with self.assertRaises(ModelNotSpecified):
             qs.get_or_create(defaults={'first': 3, 'third': 2}, second=1)
 
+    def test_query_update_or_create_gets_existing_unique_match(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+        item_3 = MockModel(foo=3)
+
+        self.mock_set.add(item_1, item_2, item_3)
+        obj, created = self.mock_set.update_or_create(foo=2)
+
+        assert obj == item_2
+        assert created is False
+
+    def test_query_update_or_create_raises_does_multiple_objects_returned_when_more_than_one_match(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=1)
+        item_3 = MockModel(foo=2)
+
+        self.mock_set.add(item_1, item_2, item_3)
+        self.assertRaises(MultipleObjectsReturned, self.mock_set.update_or_create, foo=1)
+
+    def test_query_update_or_create_creates_new_model_when_no_match(self):
+        item_1 = MockModel(foo=1)
+        item_2 = MockModel(foo=2)
+        item_3 = MockModel(foo=3)
+
+        qs = MockSet(model=create_model('foo'))
+        qs.add(item_1, item_2, item_3)
+        obj, created = qs.update_or_create(foo=4)
+
+        assert hasattr(obj, 'foo') and obj.foo == 4
+        assert created is True
+
+    def test_query_update_or_create_gets_existing_unique_match_with_defaults(self):
+        qs = MockSet(
+            model=create_model('first', 'second', 'third')
+        )
+        item_1 = MockModel(first=1)
+        item_2 = MockModel(second=2)
+        item_3 = MockModel(third=3)
+        qs.add(item_1, item_2, item_3)
+
+        obj, created = qs.update_or_create(defaults={'first': 3, 'third': 1}, second=2)
+
+        assert hasattr(obj, 'second') and obj.second == 2
+        assert created is False
+
+    def test_query_update_or_create_raises_does_multiple_objects_returned_when_more_than_one_match_with_defaults(self):
+        qs = MockSet(
+            model=create_model('first', 'second', 'third')
+        )
+        item_1 = MockModel(first=1)
+        item_2 = MockModel(first=1)
+        item_3 = MockModel(third=3)
+        qs.add(item_1, item_2, item_3)
+
+        qs.add(item_1, item_2, item_3)
+        with self.assertRaises(MultipleObjectsReturned):
+            qs.update_or_create(first=1, defaults={'second': 2})
+
+    def test_query_update_or_create_creates_new_model_when_no_match_with_defaults(self):
+        qs = MockSet(
+            model=create_model('first', 'second', 'third')
+        )
+        item_1 = MockModel(first=1)
+        item_2 = MockModel(second=2)
+        item_3 = MockModel(third=3)
+        qs.add(item_1, item_2, item_3)
+
+        obj, created = qs.update_or_create(defaults={'first': 3}, second=1)
+
+        assert hasattr(obj, 'first') and obj.first == 3
+        assert hasattr(obj, 'second') and obj.second == 1
+        assert hasattr(obj, 'third') and obj.third is None
+        assert created is True
+
+    def test_query_update_or_create_updates_match_with_defaults(self):
+        qs = MockSet(
+            model=create_model('first', 'second', 'third')
+        )
+        item_1 = MockModel(first=1)
+        item_2 = MockModel(second=2)
+        item_3 = MockModel(third=3)
+        qs.add(item_1, item_2, item_3)
+
+        obj, created = qs.update_or_create(defaults={'first': 3, 'third': 1}, second=2)
+
+        assert hasattr(obj, 'first') and obj.first == 3
+        assert hasattr(obj, 'second') and obj.second == 2
+        assert hasattr(obj, 'third') and obj.third == 1
+        assert created is False
+
+    def test_query_update_or_create_raises_model_not_specified_with_defaults_when_mockset_model_is_none(self):
+        qs = MockSet()
+        item_1 = MockModel(first=1)
+        item_2 = MockModel(second=2)
+        item_3 = MockModel(third=3)
+        qs.add(item_1, item_2, item_3)
+
+        with self.assertRaises(ModelNotSpecified):
+            qs.update_or_create(defaults={'first': 3, 'third': 2}, second=1)
+
     def test_query_return_self_methods_accept_any_parameters_and_return_instance(self):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
         assert qs == qs.all()
