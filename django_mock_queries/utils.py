@@ -88,13 +88,13 @@ def validate_field(field_name, model_fields, for_update=False):
         raise FieldError(message)
 
 
-def get_field_value(obj, field_name):
+def get_field_value(obj, field_name, default=None):
     if type(obj) is dict:
-        return obj[field_name]
+        return obj.get(field_name, default)
     elif is_list_like_iter(obj):
-        return [get_attribute(x, field_name)[0] for x in obj]
+        return [get_attribute(x, field_name, default)[0] for x in obj]
     else:
-        return getattr(obj, field_name, None)
+        return getattr(obj, field_name, default)
 
 
 def get_attribute(obj, attr, default=None):
@@ -110,6 +110,7 @@ def get_attribute(obj, attr, default=None):
             comparison = (attr_part, comparison_type)
             break
         elif result is None:
+            result = default
             break
         else:
             lookup_fields, actual_fields = find_field_names(result)
@@ -118,9 +119,8 @@ def get_attribute(obj, attr, default=None):
                 validate_field(attr_part, lookup_fields)
 
             field = actual_fields[lookup_fields.index(attr_part)] if attr_part in lookup_fields else attr_part
-            result = get_field_value(result, field)
-
-    return result or default, comparison
+            result = get_field_value(result, field, default)
+    return result, comparison
 
 
 def is_match(first, second, comparison=None):
