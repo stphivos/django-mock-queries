@@ -52,6 +52,18 @@ class TestQuery(TestCase):
         assert item_2 in results
         assert item_3 not in results
 
+    def test_query_filters_items_by_boolean_attributes(self):
+        item_1 = MockModel(foo=True, bar=True)
+        item_2 = MockModel(foo=True, bar=False)
+        item_3 = MockModel(foo=False, bar=False)
+
+        self.mock_set.add(item_1, item_2, item_3)
+        results = list(self.mock_set.filter(foo=True, bar=False))
+
+        assert item_1 not in results
+        assert item_2 in results
+        assert item_3 not in results
+
     def test_query_filters_items_by_q_object_or(self):
         item_1 = MockModel(mock_name='#1', foo=1)
         item_2 = MockModel(mock_name='#2', foo=2)

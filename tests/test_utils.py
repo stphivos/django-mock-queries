@@ -36,6 +36,12 @@ class TestUtils(TestCase):
         assert value == 'test'
         assert comparison is None
 
+    def test_get_attribute_returns_false_when_value_is_false(self):
+        obj = MagicMock(foo=False)
+        value, comparison = utils.get_attribute(obj, 'foo')
+        assert value is False
+        assert comparison is None
+
     def test_get_attribute_returns_value_with_defined_comparison(self):
         obj = MagicMock(foo='test')
         value, comparison = utils.get_attribute(obj, 'foo__' + constants.COMPARISON_IEXACT)
