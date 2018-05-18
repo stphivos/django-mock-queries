@@ -20,7 +20,7 @@ def read_md(filename):
 setup(
     name='django_mock_queries',
     packages=['django_mock_queries'],
-    version='2.0.0',
+    version='2.0.1',
     description='A django library for mocking queryset functions in memory for testing',
     long_description=read_md('README.md'),
     author='Phivos Stylianides',
