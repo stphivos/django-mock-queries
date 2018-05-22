@@ -298,3 +298,13 @@ class TestUtils(TestCase):
 
         result = utils.is_match('a', ('b', 'c'), constants.COMPARISON_RANGE)
         assert result is False
+
+    def test_matches_with_range(self):
+        source = [
+            MagicMock(foo=1),
+            MagicMock(foo=3),
+        ]
+
+        results = utils.matches(*source, foo__range=(1, 2))
+        assert source[0] in results
+        assert source[1] not in results
