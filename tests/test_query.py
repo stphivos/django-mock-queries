@@ -1211,3 +1211,7 @@ class TestQuery(TestCase):
         assert len(result) == 2
         assert result[0] == datetime.datetime(2017, 1, 10, 1, 2, 9)
         assert result[1] == datetime.datetime(2017, 1, 10, 1, 2, 3)
+
+    def test_empty_queryset_bool_converts_to_false(self):
+        qs = MockSet()
+        assert not bool(qs)
