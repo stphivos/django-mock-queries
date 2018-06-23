@@ -44,7 +44,7 @@ class MockSet(MagicMock):
         self.__len__ = lambda s: len(s.items)
         self.__iter__ = lambda s: iter(s.items)
         self.__getitem__ = lambda s, k: self.items[k]
-        self.__bool__ = lambda s: len(s.items) > 0
+        self.__bool__ = self.__nonzero__ = lambda s: len(s.items) > 0
 
     def _return_self(self, *_, **__):
         return self
