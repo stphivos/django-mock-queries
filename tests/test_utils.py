@@ -158,6 +158,9 @@ class TestUtils(TestCase):
         result = utils.is_match(3, 5, constants.COMPARISON_GT)
         assert result is False
 
+        result = utils.is_match(None, 5, constants.COMPARISON_GT)
+        assert result is False
+
     def test_is_match_greater_than_equal_to_value_check(self):
         result = utils.is_match(5, 3, constants.COMPARISON_GTE)
         assert result is True
@@ -168,11 +171,17 @@ class TestUtils(TestCase):
         result = utils.is_match(3, 5, constants.COMPARISON_GTE)
         assert result is False
 
+        result = utils.is_match(None, 5, constants.COMPARISON_GTE)
+        assert result is False
+
     def test_is_match_less_than_value_check(self):
         result = utils.is_match(1, 2, constants.COMPARISON_LT)
         assert result is True
 
         result = utils.is_match(2, 2, constants.COMPARISON_LT)
+        assert result is False
+
+        result = utils.is_match(None, 5, constants.COMPARISON_LT)
         assert result is False
 
     def test_is_match_less_than_equal_to_value_check(self):
@@ -183,6 +192,9 @@ class TestUtils(TestCase):
         assert result is True
 
         result = utils.is_match(2, 1, constants.COMPARISON_LTE)
+        assert result is False
+
+        result = utils.is_match(None, 5, constants.COMPARISON_LTE)
         assert result is False
 
     def test_is_match_isnull_check(self):
