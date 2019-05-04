@@ -161,6 +161,9 @@ class TestUtils(TestCase):
         result = utils.is_match(None, 5, constants.COMPARISON_GT)
         assert result is False
 
+        result = utils.is_match(0, -2, constants.COMPARISON_GT)
+        assert result is True
+
     def test_is_match_greater_than_equal_to_value_check(self):
         result = utils.is_match(5, 3, constants.COMPARISON_GTE)
         assert result is True
