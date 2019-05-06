@@ -93,6 +93,8 @@ def get_field_value(obj, field_name, default=None):
         return obj.get(field_name, default)
     elif is_list_like_iter(obj):
         return [get_attribute(x, field_name, default)[0] for x in obj]
+    elif is_like_date_or_datetime(obj):
+        return obj
     else:
         return getattr(obj, field_name, default)
 
@@ -243,6 +245,10 @@ def is_list_like_iter(obj):
         return False
 
     return hasattr(obj, '__iter__') and not isinstance(obj, str)
+
+
+def is_like_date_or_datetime(obj):
+    return type(obj) in [date, datetime]
 
 
 def flatten_list(source):
