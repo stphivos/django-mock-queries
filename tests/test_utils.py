@@ -323,3 +323,30 @@ class TestUtils(TestCase):
         results = utils.matches(*source, foo__range=(1, 2))
         assert source[0] in results
         assert source[1] not in results
+
+    def test_is_like_date_or_datetime_for_datetime_obj(self):
+        result = utils.is_like_date_or_datetime(date(2019, 1, 1))
+        assert result is True
+
+    def test_is_like_date_or_datetime_for_date_obj(self):
+        result = utils.is_like_date_or_datetime(datetime(2019, 1, 1))
+        assert result is True
+
+    def test_is_like_date_or_datetime_for_non_date_or_datetime_obj(self):
+        result = utils.is_like_date_or_datetime('non_datetime_obj')
+        assert result is False
+
+    def test_get_field_value_returns_dict_value(self):
+        dict_obj = {'key': 45}
+        result = utils.get_field_value(dict_obj, 'key')
+        assert result == 45
+
+    def test_get_field_value_returns_datetime_obj(self):
+        datetime_obj = datetime(2019, 1, 2)
+        result = utils.get_field_value(datetime_obj, 'date')
+        assert result == datetime_obj
+
+    def test_get_field_value_returns_date_obj(self):
+        date_obj = date(2019, 1, 2)
+        result = utils.get_field_value(date_obj, 'date')
+        assert result == date_obj
