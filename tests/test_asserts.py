@@ -1,5 +1,5 @@
 from mock import patch
-from model_mommy import mommy
+from model_bakery import baker
 from unittest import TestCase, skipIf
 
 import django
@@ -9,8 +9,8 @@ from tests.mock_models import Car, CarSerializer, Manufacturer
 
 class TestQuery(TestCase):
     def setUp(self):
-        self.make_model = mommy.prepare(Manufacturer, id=1, _fill_optional=True)
-        self.car_model = mommy.prepare(Car, id=1, make=self.make_model, _fill_optional=True)
+        self.make_model = baker.prepare(Manufacturer, id=1, _fill_optional=True)
+        self.car_model = baker.prepare(Car, id=1, make=self.make_model, _fill_optional=True)
         self.serializer_assert = SerializerAssert(CarSerializer)
 
         def set_fields(*fields):
