@@ -1,4 +1,4 @@
 mock
 model_mommy>=1.5.1
-Django>=1.8.17,<=3.0
+Django>=1.8.17,<=3.0.9999
 djangorestframework>=3.11
