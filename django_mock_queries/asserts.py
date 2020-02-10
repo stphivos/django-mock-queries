@@ -1,5 +1,5 @@
 from mock import patch, Mock
-from model_mommy import mommy
+from model_bakery import baker
 
 from .constants import *
 
@@ -17,7 +17,7 @@ class SerializerAssert:
         self._cls = cls
 
     def _get_obj(self):
-        obj = self._obj or mommy.prepare(self._cls.Meta.model, _fill_optional=True)
+        obj = self._obj or baker.prepare(self._cls.Meta.model, _fill_optional=True)
         return obj
 
     def _get_attr(self, serializer, field):
