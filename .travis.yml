@@ -12,13 +12,6 @@ matrix:
       - TOX_ENV=py27-dj19-drf33
       - TOX_ENV=py27-dj110-drf33
       - TOX_ENV=py27-dj111-drf37
-    - python: 3.4
-      env:
-      - TOX_ENV=py34-dj18-drf33
-      - TOX_ENV=py34-dj19-drf33
-      - TOX_ENV=py34-dj110-drf33
-      - TOX_ENV=py34-dj111-drf37
-      - TOX_ENV=py34-dj20-drf37
     - python: 3.5
       env:
       - TOX_ENV=py35-dj18-drf33
