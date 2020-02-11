@@ -17,7 +17,7 @@ from django_mock_queries.query import MockModel
 from django_mock_queries.mocks import mocked_relations
 from django.contrib.auth.models import User
 from django.test import TestCase, skipIfDBFeature
-from model_mommy import mommy
+from model_bakery import baker
 from analytics.api import AnalyticsApi
 from analytics import views
 
@@ -66,7 +66,7 @@ class TestMockedApi(TestCase):
         assert inactive_user not in results
 
     def test_mocked_api_create_user(self):
-        attrs = dict((k, v) for (k, v) in mommy.prepare(User).__dict__.items() if k[0] != '_')
+        attrs = dict((k, v) for (k, v) in baker.prepare(User).__dict__.items() if k[0] != '_')
         user = self.api.create_user(**attrs)
         assert isinstance(user, User)
 
