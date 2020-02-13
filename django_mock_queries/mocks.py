@@ -426,7 +426,14 @@ class ModelMocker(Mocker):
     A decorator that patches django base model's db read/write methods and wires them to a MockSet.
     """
 
-    default_methods = ('objects', '_meta.base_manager._insert', '_do_update')
+    default_methods = ['objects', '_do_update']
+
+    if django.VERSION[0] == 3:
+        default_methods += ['_base_manager._insert', ]
+    else:
+        default_methods += ['_meta.base_manager._insert', ]
+
+    default_methods = tuple(default_methods)
 
     def __init__(self, cls, *methods, **kwargs):
         super(ModelMocker, self).__init__(cls, *(self.default_methods + methods), **kwargs)
@@ -453,6 +460,12 @@ class ModelMocker(Mocker):
         self.objects.add(obj)
 
         return self._obj_pk(obj)
+
+    def _base_manager__insert(self, objects, *_, **__):
+        obj = objects[0]
+        self.objects.add(obj)
+
+        return [self._obj_pk(obj)]
 
     def _do_update(self, *args, **_):
         _, _, pk_val, values, _, _ = args
