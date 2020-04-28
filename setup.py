@@ -1,13 +1,5 @@
 from setuptools import setup
 
-try:
-    from pip._internal.req import parse_requirements
-except ImportError:
-    from pip.req import parse_requirements
-
-install_req = parse_requirements('requirements/core.txt', session='skip')
-req = [str(ir.req) for ir in install_req]
-
 
 def read_md(filename):
     try:
@@ -44,5 +36,10 @@ setup(
     ],
     keywords='django orm mocking unit-testing tdd',
     packages=['django_mock_queries'],
-    install_requires=req,
+    install_requires=[
+        "mock",
+        "Django",
+        "djangorestframework",
+        "model-bakery==1.0.2",
+    ],
 )
