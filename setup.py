@@ -9,6 +9,15 @@ def read_md(filename):
         return open(filename).read()
 
 
+def parse_requirements(filename):
+    reqs = []
+    with open(filename, 'r') as f:
+        reqs = f.read().splitlines()
+    if not reqs:
+        raise RuntimeError("Unable to read requirements from '%s'" % filename)
+    return reqs
+
+
 setup(
     name='django_mock_queries',
     version='2.1.4',
@@ -36,10 +45,5 @@ setup(
     ],
     keywords='django orm mocking unit-testing tdd',
     packages=['django_mock_queries'],
-    install_requires=[
-        "mock",
-        "Django",
-        "djangorestframework",
-        "model-bakery==1.0.2",
-    ],
+    install_requires=parse_requirements('requirements/core.txt'),
 )
