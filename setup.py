@@ -1,13 +1,5 @@
 from setuptools import setup
 
-try:
-    from pip._internal.req import parse_requirements
-except ImportError:
-    from pip.req import parse_requirements
-
-install_req = parse_requirements('requirements/core.txt', session='skip')
-req = [str(ir.req) for ir in install_req]
-
 
 def read_md(filename):
     try:
@@ -15,6 +7,15 @@ def read_md(filename):
         return convert_file(filename, 'rst')
     except (ImportError, OSError):
         return open(filename).read()
+
+
+def parse_requirements(filename):
+    reqs = []
+    with open(filename, 'r') as f:
+        reqs = f.read().splitlines()
+    if not reqs:
+        raise RuntimeError("Unable to read requirements from '%s'" % filename)
+    return reqs
 
 
 setup(
@@ -44,5 +45,5 @@ setup(
     ],
     keywords='django orm mocking unit-testing tdd',
     packages=['django_mock_queries'],
-    install_requires=req,
+    install_requires=parse_requirements('requirements/core.txt'),
 )
