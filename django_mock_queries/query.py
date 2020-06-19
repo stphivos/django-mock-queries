@@ -1,5 +1,5 @@
 import datetime
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from mock import Mock, MagicMock, PropertyMock
 
 from .constants import *
@@ -358,19 +358,30 @@ class MockSet(MagicMock):
 
     def values_list(self, *fields, **kwargs):
         flat = kwargs.pop('flat', False)
+        named = kwargs.pop('named', False)
 
         if kwargs:
             raise TypeError('Unexpected keyword arguments to values_list: %s' % (list(kwargs),))
         if flat and len(fields) > 1:
             raise TypeError('`flat` is not valid when values_list is called with more than one field.')
+        if flat and named:
+            raise TypeError("'flat' and 'named' can't be used together.")
         if len(fields) == 0:
             raise NotImplementedError('values_list() with no arguments is not implemented')
 
         result = []
         item_values_dicts = list(self.values(*fields))
 
+
+        Row = None
+        if named:
+            Row = namedtuple('Row', fields)
+
         for values_dict in item_values_dicts:
-            result.append(self._item_values_list(values_dict, fields, flat))
+            if named:
+                result.append(Row(**values_dict))
+            else:
+                result.append(self._item_values_list(values_dict, fields, flat))
 
         return MockSet(*result, clone=self)
 
