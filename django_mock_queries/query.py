@@ -372,11 +372,14 @@ class MockSet(MagicMock):
         result = []
         item_values_dicts = list(self.values(*fields))
 
-        for values_dict in item_values_dicts:
-            result.append(self._item_values_list(values_dict, fields, flat))
         if named:
             Row = namedtuple('Row', fields)
-            result = [Row(*value) for value in result]
+            make_row = lambda values: Row(**values)
+        else:
+            make_row = lambda values: self._item_values_list(values, fields, flat)
+
+        for values_dict in item_values_dicts:
+            result.append(make_row(values_dict))
 
         return MockSet(*result, clone=self)
 
