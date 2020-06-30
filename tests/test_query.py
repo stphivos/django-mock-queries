@@ -909,16 +909,12 @@ class TestQuery(TestCase):
         self.assertRaises(TypeError, qs.values_list, arg='value')
 
     def test_query_values_list_raises_type_error_when_flat_specified_with_multiple_fields(self):
-        qs = MockSet(MockModel(foo=1), MockModel(foo=2))
+        qs = MockSet(MockModel(foo=1, bar=1), MockModel(foo=2, bar=2))
         self.assertRaises(TypeError, qs.values_list, 'foo', 'bar', flat=True)
 
     def test_query_values_list_raises_attribute_error_when_field_is_not_in_meta_concrete_fields(self):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
         self.assertRaises(FieldError, qs.values_list, 'bar')
-
-    def test_query_values_list_raises_not_implemented_if_no_fields_specified(self):
-        qs = MockSet(MockModel(foo=1), MockModel(foo=2))
-        self.assertRaises(NotImplementedError, qs.values_list)
 
     def test_query_values_list(self):
         item_1 = MockModel(foo=1, bar=3)
@@ -950,7 +946,6 @@ class TestQuery(TestCase):
         assert results_with_named_fields_fields[0].bar == 3
         assert results_with_named_fields_fields[1].foo == 2
         assert results_with_named_fields_fields[1].bar == 4
-
 
     def test_query_values_list_of_nested_field(self):
         with mocked_relations(Manufacturer, Car):

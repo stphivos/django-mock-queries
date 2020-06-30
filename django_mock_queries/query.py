@@ -356,7 +356,7 @@ class MockSet(MagicMock):
                 data.append(values_dict[key])
             return tuple(data)
 
-    def values_list(self, *fields, **kwargs):
+    def _values_row(self, values_dict, fields, **kwargs):
         flat = kwargs.pop('flat', False)
         named = kwargs.pop('named', False)
 
@@ -365,21 +365,27 @@ class MockSet(MagicMock):
         if flat and len(fields) > 1:
             raise TypeError('`flat` is not valid when values_list is called with more than one field.')
         if flat and named:
-            raise TypeError("'flat' and 'named' can't be used together.")
-        if len(fields) == 0:
-            raise NotImplementedError('values_list() with no arguments is not implemented')
+            raise TypeError('`flat` and `named` can\'t be used together.')
+
+        if named:
+            Row = namedtuple('Row', fields)
+            row = Row(**values_dict)
+        else:
+            row = self._item_values_list(values_dict, fields, flat)
+
+        return row
+
+    def values_list(self, *fields, **kwargs):
+        # Django doesn't complain about this:
+        # https://github.com/django/django/blob/a4e6030904df63b3f10aa0729b86dc6942b0458e/django/db/models/query.py#L845
+        # if len(fields) == 0:
+        #     raise NotImplementedError('values_list() with no arguments is not implemented')
 
         result = []
         item_values_dicts = list(self.values(*fields))
 
-        if named:
-            Row = namedtuple('Row', fields)
-            make_row = lambda values: Row(**values)
-        else:
-            make_row = lambda values: self._item_values_list(values, fields, flat)
-
         for values_dict in item_values_dicts:
-            result.append(make_row(values_dict))
+            result.append(self._values_row(values_dict, fields, **kwargs))
 
         return MockSet(*result, clone=self)
 
