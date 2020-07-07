@@ -111,7 +111,7 @@ class MockSet(MagicMock):
         return MockSet(*matches(*results, **attrs), clone=self)
 
     def exclude(self, *args, **attrs):
-        excluded = self.filter(*args, **attrs)
+        excluded = set(self.filter(*args, **attrs))
         results = [item for item in self.items if item not in excluded]
         return MockSet(*results, clone=self)
 
