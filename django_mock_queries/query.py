@@ -1,4 +1,5 @@
 import datetime
+import random
 from collections import OrderedDict, namedtuple
 from mock import Mock, MagicMock, PropertyMock
 
@@ -152,15 +153,15 @@ class MockSet(MagicMock):
 
     def order_by(self, *fields):
         results = self.items
-        if fields == ('?',):
-            results = random.shuffle(results)
-        else:
-            for field in reversed(fields):
-                is_reversed = field.startswith('-')
-                attr = field[1:] if is_reversed else field
-                results = sorted(results,
-                                key=lambda r: get_attribute(r, attr),
-                                reverse=is_reversed)
+        for field in reversed(fields):
+            if fields == '?':
+                random.shuffle(results)
+                break
+            is_reversed = field.startswith('-')
+            attr = field[1:] if is_reversed else field
+            results = sorted(results,
+                            key=lambda r: get_attribute(r, attr),
+                            reverse=is_reversed)
         return MockSet(*results, clone=self)
 
     def distinct(self, *fields):
