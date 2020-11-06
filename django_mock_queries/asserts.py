@@ -1,4 +1,8 @@
-from mock import patch, Mock
+try:
+    from unittest.mock import patch, Mock
+except ImportError:
+    from mock import patch, Mock
+
 from model_bakery import baker
 
 from .constants import *
