@@ -3,7 +3,11 @@ import django
 from django.db import connection
 from django.db.utils import NotSupportedError
 from django.db.backends.base.creation import BaseDatabaseCreation
-from mock import patch, MagicMock, PropertyMock
+try:
+    from unittest.mock import patch, MagicMock, PropertyMock
+except ImportError:
+    from mock import patch, MagicMock, PropertyMock
+
 from unittest import TestCase
 
 from django_mock_queries import mocks
