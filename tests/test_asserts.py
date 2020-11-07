@@ -1,4 +1,8 @@
-from mock import patch
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
+
 from model_bakery import baker
 from unittest import TestCase, skipIf
 

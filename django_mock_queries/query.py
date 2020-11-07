@@ -1,7 +1,10 @@
 import datetime
 import random
 from collections import OrderedDict, namedtuple
-from mock import Mock, MagicMock, PropertyMock
+try:
+    from unittest.mock import Mock, MagicMock, PropertyMock
+except ImportError:
+    from mock import Mock, MagicMock, PropertyMock
 
 from .constants import *
 from .exceptions import *
