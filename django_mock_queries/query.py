@@ -157,7 +157,7 @@ class MockSet(MagicMock):
     def order_by(self, *fields):
         results = self.items
         for field in reversed(fields):
-            if fields == '?':
+            if field == '?':
                 random.shuffle(results)
                 break
             is_reversed = field.startswith('-')
