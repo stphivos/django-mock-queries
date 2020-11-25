@@ -108,10 +108,12 @@ class MockSet(MagicMock):
     def filter(self, *args, **attrs):
         results = list(self.items)
         for x in args:
-            if isinstance(x, DjangoQ):
-                results = self._filter_q(results, x)
-            else:
+            if not isinstance(x, DjangoQ):
                 raise ArgumentNotSupported()
+            
+            if len(x) > 0:
+                results = self._filter_q(results, x)
+
         return MockSet(*matches(*results, **attrs), clone=self)
 
     def exclude(self, *args, **attrs):
