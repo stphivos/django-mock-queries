@@ -9,7 +9,11 @@ from django.db.models import Model
 from django.db.utils import ConnectionHandler, NotSupportedError
 from functools import partial
 from itertools import chain
-from mock import Mock, MagicMock, patch, PropertyMock
+try:
+    from unittest.mock import Mock, MagicMock, patch, PropertyMock
+except ImportError:
+    from mock import Mock, MagicMock, patch, PropertyMock
+
 from types import MethodType
 
 from .constants import DjangoModelDeletionCollector, DjangoDbRouter

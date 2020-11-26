@@ -1,6 +1,10 @@
 import datetime
 
-from mock import MagicMock
+try:
+    from unittest.mock import MagicMock
+except ImportError:
+    from mock import MagicMock
+
 from unittest import TestCase
 
 from django.core.exceptions import FieldError
