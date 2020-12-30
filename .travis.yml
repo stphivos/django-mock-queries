@@ -8,13 +8,11 @@ matrix:
   include:
     - python: 2.7
       env:
-      - TOX_ENV=py27-dj18-drf33
       - TOX_ENV=py27-dj19-drf33
       - TOX_ENV=py27-dj110-drf33
       - TOX_ENV=py27-dj111-drf37
     - python: 3.5
       env:
-      - TOX_ENV=py35-dj18-drf33
       - TOX_ENV=py35-dj19-drf33
       - TOX_ENV=py35-dj110-drf33
       - TOX_ENV=py35-dj111-drf37
