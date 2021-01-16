@@ -1,4 +1,4 @@
 mock
 Django
 djangorestframework
-model-bakery==1.0.2
+model-bakery~=1.1.0
