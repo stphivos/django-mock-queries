@@ -163,8 +163,8 @@ class MockSet(MagicMock):
             is_reversed = field.startswith('-')
             attr = field[1:] if is_reversed else field
             results = sorted(results,
-                            key=lambda r: get_attribute(r, attr),
-                            reverse=is_reversed)
+                             key=lambda r: get_attribute(r, attr),
+                             reverse=is_reversed)
         return MockSet(*results, clone=self)
 
     def distinct(self, *fields):
