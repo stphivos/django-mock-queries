@@ -1,4 +1,5 @@
 import datetime
+import random
 from collections import OrderedDict, namedtuple
 try:
     from unittest.mock import Mock, MagicMock, PropertyMock
@@ -156,6 +157,9 @@ class MockSet(MagicMock):
     def order_by(self, *fields):
         results = self.items
         for field in reversed(fields):
+            if field == '?':
+                random.shuffle(results)
+                break
             is_reversed = field.startswith('-')
             attr = field[1:] if is_reversed else field
             results = sorted(results,
