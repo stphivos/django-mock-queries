@@ -1,6 +1,10 @@
 import datetime
 
-from mock import MagicMock
+try:
+    from unittest.mock import MagicMock
+except ImportError:
+    from mock import MagicMock
+
 from unittest import TestCase
 
 from django.core.exceptions import FieldError
@@ -536,6 +540,16 @@ class TestQuery(TestCase):
         results = list(self.mock_set.order_by('foo', '-bar'))
 
         assert results == [item_1, item_2, item_3], results
+
+    def test_query_order_by_random(self):
+        qs = MockSet(
+            MockModel(mock_name='test1', email='test1@gmail.com'),
+            MockModel(mock_name='test2', email='test2@hotmail.com'),
+            MockModel(mock_name='test3', email='test3@gmail.com'),
+            MockModel(mock_name='test4', email='test4@hotmail.com'),
+        )
+
+        assert list(qs) != list(qs.order_by('?'))
 
     def test_query_distinct(self):
         item_1 = MockModel(foo=1, mock_name='item_1')

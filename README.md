@@ -69,6 +69,7 @@ def active_users(self):
 """
 Test function applies expected filters by patching Django's user model Manager or Queryset with a MockSet
 """
+from mock import patch
 from django_mock_queries.query import MockSet, MockModel
 
 
