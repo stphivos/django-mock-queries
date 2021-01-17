@@ -1241,11 +1241,11 @@ class TestQuery(TestCase):
         qs = MockSet()
         assert not bool(qs)
 
-    def test_empty_query(self):
+    def test_empty_queryset_filter(self):
         car1 = Car(id=101)
         car2 = Car(id=102)
 
         mockset = MockSet(car1, car2)
         self.assertEqual(mockset.count(), 2)
         self.assertEqual(mockset.filter(Q()).count(), 2)
-        self.assertEqual(mockset.filter(Q(id=2)).count(), 1)
+
