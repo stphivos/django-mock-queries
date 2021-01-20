@@ -13,7 +13,14 @@ from .utils import (
 )
 
 
-class MockSet(MagicMock):
+class MockSetMeta(type):
+    def __call__(cls, *initial_items, **kwargs):
+        obj = super(MockSetMeta, cls).__call__(**kwargs)
+        obj.add(*initial_items)
+        return obj
+
+
+class MockSet(MagicMock, metaclass=MockSetMeta):
     EVENT_ADDED = 'added'
     EVENT_UPDATED = 'updated'
     EVENT_SAVED = 'saved'
