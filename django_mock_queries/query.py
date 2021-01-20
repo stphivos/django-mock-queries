@@ -1,6 +1,7 @@
 import datetime
 import random
 from collections import OrderedDict, namedtuple
+from six import with_metaclass
 try:
     from unittest.mock import Mock, MagicMock, PropertyMock
 except ImportError:
@@ -20,7 +21,7 @@ class MockSetMeta(type):
         return obj
 
 
-class MockSet(MagicMock, metaclass=MockSetMeta):
+class MockSet(with_metaclass(MockSetMeta, MagicMock)):
     EVENT_ADDED = 'added'
     EVENT_UPDATED = 'updated'
     EVENT_SAVED = 'saved'
