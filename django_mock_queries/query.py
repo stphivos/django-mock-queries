@@ -110,7 +110,7 @@ class MockSet(MagicMock):
         for x in args:
             if not isinstance(x, DjangoQ):
                 raise ArgumentNotSupported()
-            
+
             if len(x) > 0:
                 results = self._filter_q(results, x)
 

@@ -1248,4 +1248,3 @@ class TestQuery(TestCase):
         mockset = MockSet(car1, car2)
         self.assertEqual(mockset.count(), 2)
         self.assertEqual(mockset.filter(Q()).count(), 2)
-
