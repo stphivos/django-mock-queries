@@ -34,7 +34,8 @@ class MockSet(with_metaclass(MockSetMeta, MagicMock)):
         'using',
         'select_related',
         'prefetch_related',
-        'select_for_update'
+        'select_for_update',
+        'iterator'
     ]
 
     def __init__(self, *initial_items, **kwargs):
