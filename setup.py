@@ -2,11 +2,7 @@ from setuptools import setup
 
 
 def read_md(filename):
-    try:
-        from pypandoc import convert_file
-        return convert_file(filename, 'rst')
-    except (ImportError, OSError):
-        return open(filename).read()
+    return open(filename).read()
 
 
 def parse_requirements(filename):
@@ -23,6 +19,7 @@ setup(
     version='2.1.6',
     description='A django library for mocking queryset functions in memory for testing',
     long_description=read_md('README.md'),
+    long_description_content_type='text/markdown',
     url='https://github.com/stphivos/django-mock-queries',
     author='Phivos Stylianides',
     author_email='stphivos@gmail.com',
