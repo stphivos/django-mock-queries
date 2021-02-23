@@ -1,5 +1,7 @@
 import datetime
 
+from django.db.models.functions import Coalesce
+
 try:
     from unittest.mock import MagicMock
 except ImportError:
@@ -9,6 +11,7 @@ from unittest import TestCase
 
 from django.core.exceptions import FieldError
 from django.db.models import Q, Avg
+from django.db import models
 
 from django_mock_queries.constants import *
 from django_mock_queries.exceptions import ModelNotSpecified, ArgumentNotSupported
@@ -981,6 +984,54 @@ class TestQuery(TestCase):
 
             assert (make.name, polo.model, polo_white.color) in data
             assert (make.name, golf.model, golf_black.color) in data
+
+    def test_in_bulk(self):
+        golf = Car(model='golf', id=1)
+        polo = Car(model='polo', id=2)
+        kia = Car(model='kia', id=4)
+        qs = MockSet(golf, polo, kia)
+
+        self.assertEqual(qs.in_bulk(), {1: golf, 2: polo, 4: kia})
+        self.assertEqual(qs.in_bulk(id_list=[4], field_name='model'), {'kia': kia})
+
+    def test_annotate(self):
+        qs = MockSet(CarVariation(color='green', car=Car(model='golf', id=1), id=1),
+                     CarVariation(color='red', car=Car(model='polo', id=2), id=2),
+                     CarVariation(color=None, car=Car(model='kia', id=3), id=3),
+                     )
+        qs = qs.annotate(
+            model=models.F('car__model'),
+            str_value=models.Value('data', output_field=models.TextField()),
+            bool_value=models.Value(True, output_field=models.BooleanField()),
+            int_value=models.Value(10, output_field=models.IntegerField()),
+            is_golf=models.Case(models.When(car__model='golf', then=True), default=False, output_field=models.BooleanField()),
+            color_or_car=Coalesce('color', models.F('car__model')),
+        )
+
+        values_res = list(qs.values('model', 'str_value', 'bool_value', 'int_value', 'is_golf', 'color_or_car'))
+        self.assertEqual([
+            {'model': 'golf', 'int_value': 10, 'str_value': 'data', 'bool_value': True, 'is_golf': True, 'color_or_car': 'green'},
+            {'model': 'polo', 'int_value': 10, 'str_value': 'data', 'bool_value': True, 'is_golf': False, 'color_or_car': 'red'},
+            {'model': 'kia', 'int_value': 10, 'str_value': 'data', 'bool_value': True, 'is_golf': False, 'color_or_car': 'kia'},
+        ], values_res)
+
+        first = qs[0]
+        self.assertEqual(first.model, 'golf')
+        self.assertEqual(first.color_or_car, 'green')
+        self.assertEqual(first.is_golf, True)
+        self.assertEqual(first.int_value, 10)
+        self.assertEqual(first.str_value, 'data')
+        self.assertEqual(first.bool_value, True)
+
+        second = qs[1]
+        self.assertEqual(second.model, 'polo')
+        self.assertEqual(second.color_or_car, 'red')
+        self.assertEqual(second.is_golf, False)
+        self.assertEqual(second.int_value, 10)
+        self.assertEqual(second.str_value, 'data')
+        self.assertEqual(second.bool_value, True)
+
+        self.assertEqual(qs[2].color_or_car, 'kia')
 
     def test_query_values_raises_attribute_error_when_field_is_not_in_meta_concrete_fields(self):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
