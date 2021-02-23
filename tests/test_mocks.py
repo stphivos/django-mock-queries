@@ -137,10 +137,13 @@ class MockOneToManyTests(TestCase):
     @patch.object(Manufacturer, 'car_set', MockOneToManyMap(Manufacturer.car_set))
     def test_set(self):
         m = Manufacturer()
-        car = Car(speed=95)
-        m.car_set.add(car)
+        car_1 = Car(speed=95)
+        car_2 = Car(speed=40)
+        m.car_set.add(car_1)
+        m.car_set.add(car_2)
 
-        self.assertIs(m.car_set.first(), car)
+        self.assertIs(m.car_set.first(), car_1)
+        self.assertEqual(list(m.car_set.all()), [car_1, car_2])
 
     @patch.object(Manufacturer, 'car_set', MockOneToManyMap(Manufacturer.car_set))
     def test_set_on_individual_object(self):
