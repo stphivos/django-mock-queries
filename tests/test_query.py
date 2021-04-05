@@ -559,15 +559,15 @@ class TestQuery(TestCase):
         item_3 = MockModel(foo=2, bar='b', mock_name='item_3')
 
         self.mock_set.add(item_1, item_3, item_2)
-        
+
         qs = self.mock_set.order_by('foo', 'bar')
-        
+
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
 
-            paginator = Paginator(qs, 2)
-            
-            assert len(w) == 0
+            Paginator(qs, 2)
+
+            assert 0 == len(w)
 
     def test_query_distinct(self):
         item_1 = MockModel(foo=1, mock_name='item_1')
