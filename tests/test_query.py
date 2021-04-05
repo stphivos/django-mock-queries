@@ -9,7 +9,7 @@ except ImportError:
 from unittest import TestCase
 
 from django.core.exceptions import FieldError
-from django.core.paginator import Paginator, UnorderedObjectListWarning
+from django.core.paginator import Paginator
 from django.db.models import Q, Avg
 
 from django_mock_queries.constants import *
