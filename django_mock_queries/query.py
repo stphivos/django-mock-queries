@@ -176,7 +176,7 @@ class MockSet(with_metaclass(MockSetMeta, MagicMock)):
             results = sorted(results,
                              key=lambda r: get_attribute(r, attr),
                              reverse=is_reversed)
-        return MockSet(*results, clone=self)
+        return MockSet(*results, clone=self, ordered=True)
 
     def distinct(self, *fields):
         results = OrderedDict()
