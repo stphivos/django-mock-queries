@@ -1,4 +1,5 @@
 mock
 Django
 djangorestframework
-model-bakery~=1.1.0
+model-bakery~=1.1.0; python_version < '3'
+model-bakery==1.*; python_version >= '3'
