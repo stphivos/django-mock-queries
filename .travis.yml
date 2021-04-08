@@ -20,6 +20,22 @@ jobs:
         - TOX_ENV=py37-dj31-drf310
         - TOX_ENV=py37-dj32-drf39
         - TOX_ENV=py37-dj32-drf310
+    - python: 3.8
+      env:
+        - TOX_ENV=py38-dj22-drf39
+        - TOX_ENV=py38-dj22-drf310
+        - TOX_ENV=py38-dj31-drf39
+        - TOX_ENV=py38-dj31-drf310
+        - TOX_ENV=py38-dj32-drf39
+        - TOX_ENV=py38-dj32-drf310
+    - python: 3.9
+      env:
+        - TOX_ENV=py39-dj22-drf39
+        - TOX_ENV=py39-dj22-drf310
+        - TOX_ENV=py39-dj31-drf39
+        - TOX_ENV=py39-dj31-drf310
+        - TOX_ENV=py39-dj32-drf39
+        - TOX_ENV=py39-dj32-drf310
 
 install:
   - travis_retry pip install "tox~=3.22.0" "coverage<4" "setuptools<40.0.0"
