@@ -183,7 +183,7 @@ class TestApi(TestCase):
 ## Installation
 
 ```bash
-$ pip install django_mock_queries
+pip install django_mock_queries
 ```
 
 ## Contributing
@@ -195,20 +195,20 @@ You can follow these guidelines:
 * Fork the repo from this page
 * Clone your fork:
 ```bash
-$ git clone https://github.com/{your-username}/django-mock-queries.git
-$ cd django-mock-queries
-$ git checkout -b feature/your_cool_feature
+git clone https://github.com/{your-username}/django-mock-queries.git
+cd django-mock-queries
+git checkout -b feature/your_cool_feature
 ```
 * Implement feature/fix
 * Add/modify relevant tests
 * Run tox to verify all tests and flake8 quality checks pass
 ```bash
-$ tox
+tox
 ```
 * Commit and push local branch to your origin
 ```bash
-$ git commit . -m "New cool feature does this"
-$ git push -u origin HEAD
+git commit . -m "New cool feature does this"
+git push -u origin HEAD
 ```
 * Create pull request
 
