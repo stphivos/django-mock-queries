@@ -542,14 +542,14 @@ class TestQuery(TestCase):
         assert results == [item_1, item_2, item_3], results
 
     def test_query_order_by_random(self):
-        qs = MockSet(
-            MockModel(mock_name='test1', email='test1@gmail.com'),
-            MockModel(mock_name='test2', email='test2@hotmail.com'),
-            MockModel(mock_name='test3', email='test3@gmail.com'),
-            MockModel(mock_name='test4', email='test4@hotmail.com'),
-        )
+        def make_model(idx):
+            return MockModel(
+                mock_name='test{}'.format(idx),
+                email='test{}@domain.com'.format(idx),
+            )
 
-        assert list(qs) != list(qs.order_by('?'))
+        qs = MockSet(*[make_model(i) for i in range(10)])
+        assert any(list(qs) != list(qs.order_by('?')) for _ in range(5))
 
     def test_query_distinct(self):
         item_1 = MockModel(foo=1, mock_name='item_1')
