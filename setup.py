@@ -16,7 +16,7 @@ def parse_requirements(filename):
 
 setup(
     name='django_mock_queries',
-    version='2.1.6',
+    version='2.1.7',
     description='A django library for mocking queryset functions in memory for testing',
     long_description=read_md('README.md'),
     long_description_content_type='text/markdown',
