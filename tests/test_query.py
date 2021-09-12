@@ -1,4 +1,5 @@
 import datetime
+import warnings
 
 try:
     from unittest.mock import MagicMock
@@ -8,6 +9,7 @@ except ImportError:
 from unittest import TestCase
 
 from django.core.exceptions import FieldError
+from django.core.paginator import Paginator
 from django.db.models import Q, Avg
 
 from django_mock_queries.constants import *
@@ -550,6 +552,22 @@ class TestQuery(TestCase):
 
         qs = MockSet(*[make_model(i) for i in range(10)])
         assert any(list(qs) != list(qs.order_by('?')) for _ in range(5))
+
+    def test_ordered_queryset_pagination_does_not_raise_warning(self):
+        item_1 = MockModel(foo=1, bar='a', mock_name='item_1')
+        item_2 = MockModel(foo=1, bar='c', mock_name='item_2')
+        item_3 = MockModel(foo=2, bar='b', mock_name='item_3')
+
+        self.mock_set.add(item_1, item_3, item_2)
+
+        qs = self.mock_set.order_by('foo', 'bar')
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+
+            Paginator(qs, 2)
+
+            assert 0 == len(w)
 
     def test_query_distinct(self):
         item_1 = MockModel(foo=1, mock_name='item_1')
