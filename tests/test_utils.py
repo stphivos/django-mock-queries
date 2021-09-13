@@ -318,6 +318,20 @@ class TestUtils(TestCase):
         result = utils.is_match('a', ('b', 'c'), constants.COMPARISON_RANGE)
         assert result is False
 
+    def test_is_match_overlap_string(self):
+        result = utils.is_match(['a', 'b'], ['a', 'c'], constants.COMPARISON_OVERLAP)
+        assert result is True
+
+        result = utils.is_match(['a', 'b'], ['c', 'd'], constants.COMPARISON_OVERLAP)
+        assert result is False
+
+    def test_is_match_overlap_int(self):
+        result = utils.is_match([1, 2], [1, 3], constants.COMPARISON_OVERLAP)
+        assert result is True
+
+        result = utils.is_match([1, 2], [3, 4], constants.COMPARISON_OVERLAP)
+        assert result is False
+
     def test_matches_with_range(self):
         source = [
             MagicMock(foo=1),
@@ -325,6 +339,16 @@ class TestUtils(TestCase):
         ]
 
         results = utils.matches(*source, foo__range=(1, 2))
+        assert source[0] in results
+        assert source[1] not in results
+
+    def test_is_match_with_overlap_strings(self):
+        source = [
+            MagicMock(foo=['abc', 'def', 'ghi']),
+            MagicMock(foo=['jkl', 'mno', 'pqr']),
+        ]
+
+        results = utils.matches(*source, foo__overlap=["abc", "xyz"])
         assert source[0] in results
         assert source[1] not in results
 

@@ -5,11 +5,11 @@ try:
 except ImportError:
     from mock import Mock
 
+from .comparisons import *
 from .constants import *
 from .exceptions import *
 
 import django_mock_queries.query
-import re
 
 
 def merge(first, second):
@@ -141,24 +141,25 @@ def is_match(first, second, comparison=None):
     if not comparison:
         return first == second
     return {
-        COMPARISON_EXACT: lambda: first == second,
-        COMPARISON_IEXACT: lambda: first.lower() == second.lower(),
-        COMPARISON_CONTAINS: lambda: second in first,
-        COMPARISON_ICONTAINS: lambda: second.lower() in first.lower(),
-        COMPARISON_GT: lambda: first > second if first is not None else False,
-        COMPARISON_GTE: lambda: first >= second if first is not None else False,
-        COMPARISON_LT: lambda: first < second if first is not None else False,
-        COMPARISON_LTE: lambda: first <= second if first is not None else False,
-        COMPARISON_IN: lambda: first in second if first is not None else False,
-        COMPARISON_STARTSWITH: lambda: first.startswith(second),
-        COMPARISON_ISTARTSWITH: lambda: first.lower().startswith(second.lower()),
-        COMPARISON_ENDSWITH: lambda: first.endswith(second),
-        COMPARISON_IENDSWITH: lambda: first.lower().endswith(second.lower()),
-        COMPARISON_ISNULL: lambda: (first is None) == bool(second),
-        COMPARISON_REGEX: lambda: re.search(second, first) is not None,
-        COMPARISON_IREGEX: lambda: re.search(second, first, flags=re.I) is not None,
-        COMPARISON_RANGE: lambda: second[0] <= first <= second[1]
-    }[comparison]()
+        COMPARISON_EXACT: exact_comparison,
+        COMPARISON_IEXACT: iexact_comparison,
+        COMPARISON_CONTAINS: contains_comparison,
+        COMPARISON_ICONTAINS: icontains_comparison,
+        COMPARISON_GT: gt_comparison,
+        COMPARISON_GTE: gte_comparison,
+        COMPARISON_LT: lt_comparison,
+        COMPARISON_LTE: lte_comparison,
+        COMPARISON_IN: in_comparison,
+        COMPARISON_STARTSWITH: startswith_comparison,
+        COMPARISON_ISTARTSWITH: istartswith_comparison,
+        COMPARISON_ENDSWITH: endswith_comparison,
+        COMPARISON_IENDSWITH: iendswith_comparison,
+        COMPARISON_ISNULL: isnull_comparison,
+        COMPARISON_REGEX: regex_comparison,
+        COMPARISON_IREGEX: iregex_comparison,
+        COMPARISON_RANGE: range_comparison,
+        COMPARISON_OVERLAP: overlap_comparison,
+    }[comparison](first, second)
 
 
 def extract(obj, comparison):
