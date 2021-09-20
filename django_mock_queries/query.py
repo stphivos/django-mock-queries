@@ -285,8 +285,8 @@ class MockSet(with_metaclass(MockSetMeta, MagicMock)):
     def remove(self, **attrs):
         return self.delete(**attrs)
 
-    def get(self, **attrs):
-        results = self.filter(**attrs)
+    def get(self, *args, **attrs):
+        results = self.filter(*args, **attrs)
         if not results.exists():
             self._raise_does_not_exist()
         elif results.count() > 1:
