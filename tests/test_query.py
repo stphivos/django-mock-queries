@@ -709,6 +709,14 @@ class TestQuery(TestCase):
 
         assert item_2 == result
 
+    def test_query_gets_unique_match_by_q_object(self):
+        item_1 = MockModel(mock_name='#1', foo=1)
+        item_2 = MockModel(mock_name='#2', foo=2)
+        item_3 = MockModel(mock_name='#3', foo=3)
+
+        self.mock_set.add(item_1, item_2, item_3)
+        assert self.mock_set.get(Q(foo=1)) == item_1
+
     def test_query_get_raises_does_not_exist_when_no_match(self):
         item_1 = MockModel(foo=1)
         item_2 = MockModel(foo=2)
