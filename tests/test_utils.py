@@ -227,6 +227,12 @@ class TestUtils(TestCase):
         result = utils.is_match(1, [1, 3], constants.COMPARISON_IN)
         assert result is True
 
+        result = utils.is_match([3], [1, 2], constants.COMPARISON_IN)
+        assert result is False
+
+        result = utils.is_match([1, 3], [1, 2], constants.COMPARISON_IN)
+        assert result is True
+
     @patch('django_mock_queries.utils.get_attribute')
     @patch('django_mock_queries.utils.is_match', MagicMock(return_value=True))
     def test_matches_includes_object_in_results_when_match(self, get_attr_mock):
