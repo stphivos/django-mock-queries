@@ -202,6 +202,18 @@ class TestQuery(TestCase):
                 r"Choices are 'id', 'make', 'make_id', 'model', 'passengers', 'sedan', 'speed', 'variations'\."):
             self.mock_set.filter(bad_field='bogus')
 
+    def test_query_filters_reverse_relationship_by_in_comparison(self):
+        with mocked_relations(Manufacturer):
+            cars = [Car(speed=1)]
+
+            make = Manufacturer()
+            make.car_set = MockSet(*cars)
+
+            self.mock_set.add(make)
+
+            result = self.mock_set.filter(car__speed__in=[1, 2])
+            assert result.count() == 1
+
     def test_query_exclude(self):
         item_1 = MockModel(foo=1, bar='a')
         item_2 = MockModel(foo=1, bar='b')

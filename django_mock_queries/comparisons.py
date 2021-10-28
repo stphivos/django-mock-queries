@@ -34,6 +34,9 @@ def lte_comparison(first, second):
 
 
 def in_comparison(first, second):
+    if isinstance(first, list):
+        return bool(set(first).intersection(set(second)))
+
     return first in second if first is not None else False
 
 
