@@ -1,5 +1,6 @@
 import datetime
 import warnings
+import six
 
 try:
     from unittest.mock import MagicMock
@@ -196,7 +197,7 @@ class TestQuery(TestCase):
         item_2.sedan = item_2
 
         self.mock_set.add(item_1, item_2, item_3)
-        with self.assertRaisesRegexp(
+        with six.assertRaisesRegex(
                 FieldError,
                 r"Cannot resolve keyword 'bad_field' into field\. "
                 r"Choices are 'id', 'make', 'make_id', 'model', 'passengers', 'sedan', 'speed', 'variations'\."):

@@ -1,3 +1,4 @@
+import six
 from datetime import date, datetime
 try:
     from unittest.mock import patch, MagicMock
@@ -86,7 +87,7 @@ class TestUtils(TestCase):
         assert comparison == (constants.COMPARISON_YEAR, constants.COMPARISON_EXACT)
 
     def test_validate_date_or_datetime_raises_value_error(self):
-        with self.assertRaisesRegexp(ValueError, r'13 is incorrect value for month'):
+        with six.assertRaisesRegex(self, ValueError, r'13 is incorrect value for month'):
             utils.validate_date_or_datetime(13, constants.COMPARISON_MONTH)
 
     def test_is_match_equality_check_when_comparison_none(self):

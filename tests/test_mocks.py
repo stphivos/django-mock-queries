@@ -1,5 +1,6 @@
 import sys
 import django
+import six
 from django.db import connection
 from django.db.utils import NotSupportedError
 from django.db.backends.base.creation import BaseDatabaseCreation
@@ -22,14 +23,16 @@ BUILTINS = 'builtins' if sys.version_info[0] >= 3 else '__builtin__'
 class TestMocks(TestCase):
     def test_mock_sql_raises_error(self):
         """ Get a clear error if you forget to mock a database query. """
-        with self.assertRaisesRegexp(
+        with six.assertRaisesRegex(
+                self,
                 NotSupportedError,
                 "Mock database tried to execute SQL for Car model."):
             Car.objects.count()
 
     def test_exists_raises_error(self):
         """ Get a clear error if you forget to mock a database query. """
-        with self.assertRaisesRegexp(
+        with six.assertRaisesRegex(
+                self,
                 NotSupportedError,
                 "Mock database tried to execute SQL for Car model."):
             Car.objects.exists()
@@ -111,7 +114,8 @@ class MockOneToManyTests(TestCase):
     def test_not_mocked(self):
         m = Manufacturer()
 
-        with self.assertRaisesRegexp(
+        with six.assertRaisesRegex(
+                self,
                 NotSupportedError,
                 'Mock database tried to execute SQL for Car model'):
             m.car_set.count()
@@ -123,7 +127,8 @@ class MockOneToManyTests(TestCase):
             m.car_set = MockSet(Car(speed=95))
             self.assertEqual(1, m.car_set.count())
 
-        with self.assertRaisesRegexp(
+        with six.assertRaisesRegex(
+                self,
                 NotSupportedError,
                 'Mock database tried to execute SQL for Car model'):
             m.car_set.count()
