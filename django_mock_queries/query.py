@@ -1,6 +1,6 @@
 import datetime
 import random
-from collections import OrderedDict, namedtuple
+from collections import defaultdict, OrderedDict, namedtuple
 from six import with_metaclass
 try:
     from unittest.mock import Mock, MagicMock, PropertyMock
@@ -266,16 +266,23 @@ class MockSet(with_metaclass(MockSetMeta, MagicMock)):
         return count
 
     def _delete_recursive(self, *items_to_remove, **attrs):
+        sum_deleted = 0
+        items_deleted = defaultdict(int)
+
         for item in matches(*items_to_remove, **attrs):
             self.items.remove(item)
             self.fire(item, self.EVENT_DELETED)
+            sum_deleted += 1
+            items_deleted[item._meta.label] += 1
 
         if self.clone is not None:
             self.clone._delete_recursive(*items_to_remove, **attrs)
 
+        return sum_deleted, items_deleted
+
     def delete(self, **attrs):
         # Delete normally doesn't take **attrs - they're only needed for remove
-        self._delete_recursive(*self.items, **attrs)
+        return self._delete_recursive(*self.items, **attrs)
 
     # The following 2 methods were kept for backwards compatibility and
     # should be removed in the future since they are covered by filter & delete
