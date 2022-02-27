@@ -62,6 +62,9 @@ class MockSet(with_metaclass(MockSetMeta, MagicMock)):
     def _return_self(self, *_, **__):
         return self
 
+    def _mockset_class(self):
+        return type(self)
+
     def count(self):
         return len(self.items)
 
@@ -123,12 +126,12 @@ class MockSet(with_metaclass(MockSetMeta, MagicMock)):
             if len(x) > 0:
                 results = self._filter_q(results, x)
 
-        return MockSet(*matches(*results, **attrs), clone=self)
+        return self._mockset_class()(*matches(*results, **attrs), clone=self)
 
     def exclude(self, *args, **attrs):
         excluded = set(self.filter(*args, **attrs))
         results = [item for item in self.items if item not in excluded]
-        return MockSet(*results, clone=self)
+        return self._mockset_class()(*results, clone=self)
 
     def exists(self):
         return len(self.items) > 0
@@ -176,7 +179,7 @@ class MockSet(with_metaclass(MockSetMeta, MagicMock)):
             results = sorted(results,
                              key=lambda r: get_attribute(r, attr),
                              reverse=is_reversed)
-        return MockSet(*results, clone=self, ordered=True)
+        return self._mockset_class()(*results, clone=self, ordered=True)
 
     def distinct(self, *fields):
         results = OrderedDict()
@@ -184,7 +187,7 @@ class MockSet(with_metaclass(MockSetMeta, MagicMock)):
             key = hash_dict(item, *fields)
             if key not in results:
                 results[key] = item
-        return MockSet(*results.values(), clone=self)
+        return self._mockset_class()(*results.values(), clone=self)
 
     def _raise_does_not_exist(self):
         does_not_exist = getattr(self.model, 'DoesNotExist', ObjectDoesNotExist)
@@ -363,7 +366,7 @@ class MockSet(with_metaclass(MockSetMeta, MagicMock)):
             item_values = self._item_values(item, fields)
             result.extend(item_values)
 
-        return MockSet(*result, clone=self)
+        return self._mockset_class()(*result, clone=self)
 
     def _item_values_list(self, values_dict, fields, flat):
         if flat:
@@ -405,12 +408,12 @@ class MockSet(with_metaclass(MockSetMeta, MagicMock)):
         for values_dict in item_values_dicts:
             result.append(self._values_row(values_dict, fields, **kwargs))
 
-        return MockSet(*result, clone=self)
+        return self._mockset_class()(*result, clone=self)
 
     def _date_values(self, field, kind, order, key_func):
         initial_values = list(self.values_list(field, flat=True))
 
-        return MockSet(*sorted(
+        return self._mockset_class()(*sorted(
             {truncate(x, kind) for x in initial_values},
             key=key_func,
             reverse=True if order == 'DESC' else False
