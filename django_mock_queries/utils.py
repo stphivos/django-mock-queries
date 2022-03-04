@@ -2,11 +2,7 @@ from datetime import datetime, date
 from django.core.exceptions import FieldError
 from django.db.models import F, Value, Case
 from django.db.models.functions import Coalesce
-
-try:
-    from unittest.mock import Mock
-except ImportError:
-    from mock import Mock
+from unittest.mock import Mock
 
 from .comparisons import *
 from .constants import *
@@ -75,9 +71,11 @@ def find_field_names_from_obj(obj, **kwargs):
 
 def find_field_names(obj, **kwargs):
     if hasattr(obj, '_meta'):
-        lookup_fields, actual_fields = find_field_names_from_meta(obj._meta,
-                                                                  annotated=getattr(obj,'_annotated_fields', []),
-                                                                  **kwargs)
+        lookup_fields, actual_fields = find_field_names_from_meta(
+            obj._meta,
+            annotated=getattr(obj, '_annotated_fields', []),
+            **kwargs
+        )
     else:
         lookup_fields, actual_fields = find_field_names_from_obj(obj, **kwargs)
 
@@ -327,6 +325,7 @@ def filter_results(source, query):
             return []
 
     return results
+
 
 def _filter_single_q(source, q_obj, negated):
     if isinstance(q_obj, DjangoQ):

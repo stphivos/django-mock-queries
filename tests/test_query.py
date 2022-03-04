@@ -1036,15 +1036,40 @@ class TestQuery(TestCase):
             str_value=models.Value('data', output_field=models.TextField()),
             bool_value=models.Value(True, output_field=models.BooleanField()),
             int_value=models.Value(10, output_field=models.IntegerField()),
-            is_golf=models.Case(models.When(car__model='golf', then=True), default=False, output_field=models.BooleanField()),
+            is_golf=models.Case(
+                models.When(car__model='golf', then=True),
+                default=False,
+                output_field=models.BooleanField()
+            ),
             color_or_car=Coalesce('color', models.F('car__model')),
         )
 
         values_res = list(qs.values('model', 'str_value', 'bool_value', 'int_value', 'is_golf', 'color_or_car'))
         self.assertEqual([
-            {'model': 'golf', 'int_value': 10, 'str_value': 'data', 'bool_value': True, 'is_golf': True, 'color_or_car': 'green'},
-            {'model': 'polo', 'int_value': 10, 'str_value': 'data', 'bool_value': True, 'is_golf': False, 'color_or_car': 'red'},
-            {'model': 'kia', 'int_value': 10, 'str_value': 'data', 'bool_value': True, 'is_golf': False, 'color_or_car': 'kia'},
+            {
+                'model': 'golf',
+                'int_value': 10,
+                'str_value': 'data',
+                'bool_value': True,
+                'is_golf': True,
+                'color_or_car': 'green'
+            },
+            {
+                'model': 'polo',
+                'int_value': 10,
+                'str_value': 'data',
+                'bool_value': True,
+                'is_golf': False,
+                'color_or_car': 'red'
+            },
+            {
+                'model': 'kia',
+                'int_value': 10,
+                'str_value': 'data',
+                'bool_value': True,
+                'is_golf': False,
+                'color_or_car': 'kia'
+            },
         ], values_res)
 
         first = qs[0]

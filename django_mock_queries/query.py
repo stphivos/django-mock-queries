@@ -6,7 +6,7 @@ from unittest.mock import Mock, MagicMock, PropertyMock
 from .constants import *
 from .exceptions import *
 from .utils import (
-    matches, merge, intersect, get_attribute, validate_mock_set, is_list_like_iter, flatten_list, truncate,
+    matches, get_attribute, validate_mock_set, is_list_like_iter, flatten_list, truncate,
     hash_dict, filter_results
 )
 
