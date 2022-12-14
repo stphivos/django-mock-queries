@@ -9,6 +9,7 @@ from django.db.models import Model
 from django.db.utils import ConnectionHandler, NotSupportedError
 from functools import partial
 from itertools import chain
+import mock as standalone_mock
 try:
     from unittest.mock import Mock, MagicMock, patch, PropertyMock
 except ImportError:
@@ -227,7 +228,7 @@ def mocked_relations(*models):
     patchers = []
 
     for model in find_all_models(models):
-        if isinstance(model.save, Mock):
+        if isinstance(model.save, (Mock, standalone_mock.Mock)):
             # already mocked, so skip it
             continue
 

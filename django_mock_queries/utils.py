@@ -4,6 +4,7 @@ try:
     from unittest.mock import Mock
 except ImportError:
     from mock import Mock
+import mock as standalone_mock
 
 from .comparisons import *
 from .constants import *
@@ -245,7 +246,7 @@ def is_list_like_iter(obj):
         return False
     elif isinstance(obj, django_mock_queries.query.MockSet):
         return True
-    elif isinstance(obj, Mock):
+    elif isinstance(obj, (Mock, standalone_mock.Mock)):
         return False
 
     return hasattr(obj, '__iter__') and not isinstance(obj, str)

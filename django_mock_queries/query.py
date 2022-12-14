@@ -6,6 +6,7 @@ try:
     from unittest.mock import Mock, MagicMock, PropertyMock
 except ImportError:
     from mock import Mock, MagicMock, PropertyMock
+import mock as standalone_mock
 
 from .constants import *
 from .exceptions import *
@@ -78,7 +79,7 @@ class MockSet(with_metaclass(MockSetMeta, MagicMock)):
         self.events[event] = self.events.get(event, []) + [handler]
 
     def _register_fields(self, obj):
-        if not (isinstance(obj, MockModel) or isinstance(obj, Mock)):
+        if not (isinstance(obj, MockModel) or isinstance(obj, Mock) or isinstance(obj, standalone_mock.Mock)):
             return
 
         for f in self.model._meta.fields:
