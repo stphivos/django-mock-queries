@@ -10,39 +10,6 @@ jobs:
     strategy:
       matrix:
         include:
-        - python: '2.7'
-          tox_env: 'py27-dj19-drf33'
-
-        - python: '2.7'
-          tox_env: 'py27-dj110-drf33'
-
-        - python: '2.7'
-          tox_env: 'py27-dj111-drf37'
-
-        - python: '3.5'
-          tox_env: 'py35-dj111-drf37'
-
-        - python: '3.5'
-          tox_env: 'py35-dj20-drf37'
-
-        - python: '3.5'
-          tox_env: 'py35-dj21-drf37'
-
-        - python: '3.5'
-          tox_env: 'py35-dj22-drf37'
-
-        - python: '3.5'
-          tox_env: 'py35-dj111-drf39'
-
-        - python: '3.5'
-          tox_env: 'py35-dj20-drf39'
-
-        - python: '3.5'
-          tox_env: 'py35-dj21-drf39'
-
-        - python: '3.5'
-          tox_env: 'py35-dj22-drf39'
-
         - python: '3.6'
           tox_env: 'py36-dj111-drf37'
 
