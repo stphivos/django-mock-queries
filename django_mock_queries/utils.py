@@ -1,9 +1,6 @@
 from datetime import datetime, date
 from django.core.exceptions import FieldError
-try:
-    from unittest.mock import Mock
-except ImportError:
-    from mock import Mock
+from unittest.mock import Mock
 
 from .comparisons import *
 from .constants import *

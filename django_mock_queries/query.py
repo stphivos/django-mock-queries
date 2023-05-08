@@ -1,11 +1,7 @@
 import datetime
 import random
 from collections import OrderedDict, namedtuple
-from six import with_metaclass
-try:
-    from unittest.mock import Mock, MagicMock, PropertyMock
-except ImportError:
-    from mock import Mock, MagicMock, PropertyMock
+from unittest.mock import Mock, MagicMock, PropertyMock
 
 from .constants import *
 from .exceptions import *
@@ -21,7 +17,7 @@ class MockSetMeta(type):
         return obj
 
 
-class MockSet(with_metaclass(MockSetMeta, MagicMock)):
+class MockSet(MagicMock, metaclass=MockSetMeta):
     EVENT_ADDED = 'added'
     EVENT_UPDATED = 'updated'
     EVENT_SAVED = 'saved'
@@ -472,7 +468,7 @@ def create_model(*fields):
     return MockModel(**{f: None for f in fields})
 
 
-class MockOptions(object):
+class MockOptions:
     def __init__(self, *field_names):
         self.load_fields(*field_names)
         self.get_latest_by = None
@@ -494,7 +490,7 @@ class MockOptions(object):
                 self.__dict__[key].append(obj)
 
 
-class MockField(object):
+class MockField:
     def __init__(self, field):
         for key in ('name', 'attname'):
             self.__dict__[key] = field

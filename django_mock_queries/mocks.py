@@ -9,10 +9,7 @@ from django.db.models import Model
 from django.db.utils import ConnectionHandler, NotSupportedError
 from functools import partial
 from itertools import chain
-try:
-    from unittest.mock import Mock, MagicMock, patch, PropertyMock
-except ImportError:
-    from mock import Mock, MagicMock, patch, PropertyMock
+from unittest.mock import Mock, MagicMock, patch, PropertyMock
 
 from types import MethodType
 
@@ -107,7 +104,7 @@ def mock_django_connection(disabled_features=None):
     Model.refresh_from_db = Mock()  # Make this into a noop.
 
 
-class MockMap(object):
+class MockMap:
     def __init__(self, original):
         """ Wrap a mock mapping around the original one-to-many relation. """
         self.map = {}
@@ -254,7 +251,7 @@ def mocked_relations(*models):
     return PatcherChain(patchers, pass_mocks=False)
 
 
-class PatcherChain(object):
+class PatcherChain:
     """ Chain a list of mock patchers into one.
 
     The resulting patcher can be used just like one from the mock module:
@@ -328,7 +325,7 @@ class PatcherChain(object):
             patcher.stop()
 
 
-class Mocker(object):
+class Mocker:
     """
     A decorator that patches multiple class methods with a magic mock instance that does nothing.
     """
