@@ -5,7 +5,7 @@ pytest-django==3.1.2
 flake8==3.4.1
 coverage==3.7.1
 tox==3.10.0
-virtualenv==14.0.6
+virtualenv
 pypandoc==1.4
-setuptools==39.2.0
+setuptools
 twine==1.11.0
