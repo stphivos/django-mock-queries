@@ -13,22 +13,10 @@ jobs:
           tox_env: 'py36-dj111-drf37'
 
         - python: '3.6'
-          tox_env: 'py36-dj20-drf37'
-
-        - python: '3.6'
-          tox_env: 'py36-dj21-drf37'
-
-        - python: '3.6'
           tox_env: 'py36-dj22-drf37'
 
         - python: '3.6'
           tox_env: 'py36-dj111-drf39'
-
-        - python: '3.6'
-          tox_env: 'py36-dj20-drf39'
-
-        - python: '3.6'
-          tox_env: 'py36-dj21-drf39'
 
         - python: '3.6'
           tox_env: 'py36-dj22-drf39'
@@ -40,22 +28,10 @@ jobs:
           tox_env: 'py37-dj111-drf37'
 
         - python: '3.7'
-          tox_env: 'py37-dj20-drf37'
-
-        - python: '3.7'
-          tox_env: 'py37-dj21-drf37'
-
-        - python: '3.7'
           tox_env: 'py37-dj22-drf37'
 
         - python: '3.7'
           tox_env: 'py37-dj111-drf39'
-
-        - python: '3.7'
-          tox_env: 'py37-dj20-drf39'
-
-        - python: '3.7'
-          tox_env: 'py37-dj21-drf39'
 
         - python: '3.7'
           tox_env: 'py37-dj22-drf39'
