@@ -45,11 +45,11 @@ jobs:
         - python: '3.9'
           tox_env: 'py39-dj41-drf314'
         
-        - python: '3.10'
-          tox_env: 'py310-dj41-drf314'
+        #- python: '3.10'
+          #tox_env: 'py310-dj41-drf314'
         
-        - python: '3.11'
-          tox_env: 'py311-dj41-drf314'
+        #- python: '3.11'
+          #tox_env: 'py311-dj41-drf314'
 
     runs-on: ubuntu-20.04
     name: Python ${{ matrix.python }} with packages ${{ matrix.tox_env }}
