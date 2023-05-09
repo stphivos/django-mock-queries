@@ -13,10 +13,14 @@ Including another URLconf
     1. Add an import:  from blog import urls as blog_urls
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
-from django.conf.urls import url
+try:
+    from django.urls import re_path
+except ImportError:
+    # Django 1.11
+    from django.conf.urls import url as re_path
 
 from analytics import views
 
 urlpatterns = [
-    url(r'users/active', views.active_users),
+    re_path(r'users/active', views.active_users),
 ]
