@@ -1,14 +1,10 @@
-import sys
+from unittest import TestCase
+from unittest.mock import patch, MagicMock, PropertyMock
+
 import django
 from django.db import connection
 from django.db.utils import NotSupportedError
 from django.db.backends.base.creation import BaseDatabaseCreation
-try:
-    from unittest.mock import patch, MagicMock, PropertyMock
-except ImportError:
-    from mock import patch, MagicMock, PropertyMock
-
-from unittest import TestCase
 
 from django_mock_queries import mocks
 from django_mock_queries.mocks import monkey_patch_test_db, mock_django_connection, \
@@ -16,20 +12,18 @@ from django_mock_queries.mocks import monkey_patch_test_db, mock_django_connecti
 from django_mock_queries.query import MockSet
 from tests.mock_models import Car, Sedan, Manufacturer, CarVariation
 
-BUILTINS = 'builtins' if sys.version_info[0] >= 3 else '__builtin__'
-
 
 class TestMocks(TestCase):
     def test_mock_sql_raises_error(self):
         """ Get a clear error if you forget to mock a database query. """
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
                 NotSupportedError,
                 "Mock database tried to execute SQL for Car model."):
             Car.objects.count()
 
     def test_exists_raises_error(self):
         """ Get a clear error if you forget to mock a database query. """
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
                 NotSupportedError,
                 "Mock database tried to execute SQL for Car model."):
             Car.objects.exists()
@@ -111,7 +105,7 @@ class MockOneToManyTests(TestCase):
     def test_not_mocked(self):
         m = Manufacturer()
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
                 NotSupportedError,
                 'Mock database tried to execute SQL for Car model'):
             m.car_set.count()
@@ -123,7 +117,7 @@ class MockOneToManyTests(TestCase):
             m.car_set = MockSet(Car(speed=95))
             self.assertEqual(1, m.car_set.count())
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
                 NotSupportedError,
                 'Mock database tried to execute SQL for Car model'):
             m.car_set.count()
@@ -189,8 +183,8 @@ def zero_sum(items):
 
 
 class PatcherChainTest(TestCase):
-    patch_mock_max = patch(BUILTINS + '.max')
-    patch_zero_sum = patch(BUILTINS + '.sum', zero_sum)
+    patch_mock_max = patch('builtins.max')
+    patch_zero_sum = patch('builtins.sum', zero_sum)
 
     @patch_zero_sum
     def test_patch_dummy(self):
@@ -255,7 +249,7 @@ class PatcherChainTest(TestCase):
         self.assertIs(zero_sum, mocked[1])
 
 
-@PatcherChain([patch(BUILTINS + '.max'), patch(BUILTINS + '.sum', zero_sum)],
+@PatcherChain([patch('builtins.max'), patch('builtins.sum', zero_sum)],
               pass_mocks=False)
 class PatcherChainOnClassTest(TestCase):
     test_example_attribute = 42

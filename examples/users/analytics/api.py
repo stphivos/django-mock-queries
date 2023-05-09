@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.db.models import Count
 
 
-class AnalyticsApi(object):
+class AnalyticsApi:
     def active_users(self):
         return User.objects.filter(is_active=True).all()
 

@@ -1,10 +1,6 @@
 from datetime import date, datetime
-try:
-    from unittest.mock import patch, MagicMock
-except ImportError:
-    from mock import patch, MagicMock
-
 from unittest import TestCase
+from unittest.mock import patch, MagicMock
 
 from django_mock_queries import utils, constants
 

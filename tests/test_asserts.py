@@ -1,10 +1,7 @@
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
+from unittest import TestCase, skipIf
+from unittest.mock import patch
 
 from model_bakery import baker
-from unittest import TestCase, skipIf
 
 import django
 from django_mock_queries.asserts import assert_serializer, SerializerAssert

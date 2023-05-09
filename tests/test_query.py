@@ -1,12 +1,7 @@
 import datetime
 import warnings
-
-try:
-    from unittest.mock import MagicMock
-except ImportError:
-    from mock import MagicMock
-
 from unittest import TestCase
+from unittest.mock import MagicMock
 
 from django.core.exceptions import FieldError
 from django.core.paginator import Paginator
@@ -196,7 +191,7 @@ class TestQuery(TestCase):
         item_2.sedan = item_2
 
         self.mock_set.add(item_1, item_2, item_3)
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
                 FieldError,
                 r"Cannot resolve keyword 'bad_field' into field\. "
                 r"Choices are 'id', 'make', 'make_id', 'model', 'passengers', 'sedan', 'speed', 'variations'\."):
