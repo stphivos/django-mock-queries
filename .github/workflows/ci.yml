@@ -62,7 +62,7 @@ jobs:
         python-version: ${{ matrix.python }}
 
     - name: install dependencies
-      run: python -m pip install "tox~=3.22.0" "coverage<4" "setuptools<40.0.0"
+      run: python -m pip install "tox~=3.22.0" "coverage<4"
 
     - name: run test suite
       env:
