@@ -13,11 +13,7 @@ Including another URLconf
     1. Add an import:  from blog import urls as blog_urls
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
-try:
-    from django.urls import re_path
-except ImportError:
-    # Django 1.11
-    from django.conf.urls import url as re_path
+from django.urls import re_path
 
 from analytics import views
 
