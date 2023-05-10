@@ -9,14 +9,6 @@ jobs:
     strategy:
       matrix:
         include:
-        - python: '3.7'
-          tox_env: 'py37-dj111-drf311'
-        - python: '3.7'
-          tox_env: 'py37-dj22-drf311'
-        - python: '3.7'
-          tox_env: 'py37-dj22-drf313'
-        - python: '3.7'
-          tox_env: 'py37-dj32-drf314'
         - python: '3.8'
           tox_env: 'py38-dj32-drf314'
         - python: '3.9'
