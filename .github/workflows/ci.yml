@@ -9,49 +9,30 @@ jobs:
     strategy:
       matrix:
         include:
-        - python: '3.6'
-          tox_env: 'py36-dj111-drf37'
-
-        - python: '3.6'
-          tox_env: 'py36-dj22-drf37'
-
-        - python: '3.6'
-          tox_env: 'py36-dj111-drf39'
-
-        - python: '3.6'
-          tox_env: 'py36-dj22-drf39'
-
-        - python: '3.6'
-          tox_env: 'py36-dj32-drf310'
-
         - python: '3.7'
-          tox_env: 'py37-dj111-drf37'
-
+          tox_env: 'py37-dj111-drf311'
         - python: '3.7'
-          tox_env: 'py37-dj22-drf37'
-
+          tox_env: 'py37-dj22-drf311'
         - python: '3.7'
-          tox_env: 'py37-dj111-drf39'
-
+          tox_env: 'py37-dj22-drf313'
         - python: '3.7'
-          tox_env: 'py37-dj22-drf39'
-
-        - python: '3.7'
-          tox_env: 'py37-dj32-drf310'
-        
+          tox_env: 'py37-dj32-drf314'
+        - python: '3.8'
+          tox_env: 'py38-dj32-drf314'
+        - python: '3.9'
+          tox_env: 'py39-dj32-drf314'
+        # - python: '3.10'
+        #   tox_env: 'py310-dj32-drf314'
         - python: '3.8'
           tox_env: 'py38-dj41-drf314'
-        
         - python: '3.9'
           tox_env: 'py39-dj41-drf314'
-        
-        #- python: '3.10'
-          #tox_env: 'py310-dj41-drf314'
-        
-        #- python: '3.11'
-          #tox_env: 'py311-dj41-drf314'
+        # - python: '3.10'
+        #   tox_env: 'py310-dj41-drf314'
+        # - python: '3.11'
+        #   tox_env: 'py311-dj41-drf314'
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Python ${{ matrix.python }} with packages ${{ matrix.tox_env }}
     steps:
     - uses: actions/checkout@v3
@@ -62,7 +43,7 @@ jobs:
         python-version: ${{ matrix.python }}
 
     - name: install dependencies
-      run: python -m pip install "tox~=3.22.0" "coverage<4"
+      run: python -m pip install "tox~=4.4.0" "coverage<4"
 
     - name: run test suite
       env:
