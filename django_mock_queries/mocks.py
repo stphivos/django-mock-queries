@@ -88,7 +88,7 @@ def mock_django_connection(disabled_features=None):
     mock_ops = mock_connection.ops
 
     # noinspection PyUnusedLocal
-    def compiler(queryset, connection, using, **kwargs):
+    def compiler(queryset, using=None, connection=None, elide_empty=True, **kwargs):
         result = MagicMock(name='mock_connection.ops.compiler()')
         # noinspection PyProtectedMember
         result.execute_sql.side_effect = NotSupportedError(
@@ -429,7 +429,7 @@ class ModelMocker(Mocker):
 
     default_methods = ['objects', '_do_update']
 
-    if django.VERSION[0] == 3:
+    if django.VERSION[0] >= 3:
         default_methods += ['_base_manager._insert', ]
     else:
         default_methods += ['_meta.base_manager._insert', ]
@@ -466,7 +466,10 @@ class ModelMocker(Mocker):
         obj = objects[0]
         self.objects.add(obj)
 
-        return [self._obj_pk(obj)]
+        # Do not set anything on the model instance itself, as we do not get any values from the database.
+        # The object ID is being set automatically.
+        # Reference: `django.db.models.base.Model._save_table`
+        return []
 
     def _do_update(self, *args, **_):
         _, _, pk_val, values, _, _ = args

@@ -103,7 +103,7 @@ class MockOneToOneTests(TestCase):
 # noinspection PyUnresolvedReferences,PyStatementEffect
 class MockOneToManyTests(TestCase):
     def test_not_mocked(self):
-        m = Manufacturer()
+        m = Manufacturer(id=99)
 
         with self.assertRaisesRegex(
                 NotSupportedError,
@@ -111,7 +111,7 @@ class MockOneToManyTests(TestCase):
             m.car_set.count()
 
     def test_mock_is_removed(self):
-        m = Manufacturer()
+        m = Manufacturer(id=99)
 
         with patch.object(Manufacturer, 'car_set', MockOneToManyMap(Manufacturer.car_set)):
             m.car_set = MockSet(Car(speed=95))
@@ -411,6 +411,11 @@ class TestMockers(TestCase):
             obj = Car(speed=4)
             obj.save()
             self.assertEqual(Car.objects.get(pk=obj.id), obj)
+
+            # Another instances gets inserted and has a different ID
+            obj2 = Car(speed=5)
+            obj.save()
+            self.assertNotEqual(obj.id, obj2.id)
 
             # Existing instance gets updated
             obj = Car(id=obj.id, speed=5)

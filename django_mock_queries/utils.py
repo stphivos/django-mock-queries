@@ -128,8 +128,7 @@ def get_attribute(obj, attr, default=None):
 def is_match(first, second, comparison=None):
     if isinstance(first, django_mock_queries.query.MockSet):
         return is_match_in_children(comparison, first, second)
-    if (isinstance(first, (int, str)) and
-            isinstance(second, django_mock_queries.query.MockSet)):
+    if (isinstance(first, (int, str)) and isinstance(second, django_mock_queries.query.MockSet)):
         second = convert_to_pks(second)
     if (isinstance(first, date) or isinstance(first, datetime)) \
             and isinstance(comparison, tuple) and len(comparison) == 2:
