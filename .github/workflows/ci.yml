@@ -13,16 +13,16 @@ jobs:
           tox_env: 'py38-dj32-drf314'
         - python: '3.9'
           tox_env: 'py39-dj32-drf314'
-        # - python: '3.10'
-        #   tox_env: 'py310-dj32-drf314'
+        - python: '3.10'
+          tox_env: 'py310-dj32-drf314'
         - python: '3.8'
           tox_env: 'py38-dj41-drf314'
         - python: '3.9'
           tox_env: 'py39-dj41-drf314'
-        # - python: '3.10'
-        #   tox_env: 'py310-dj41-drf314'
-        # - python: '3.11'
-        #   tox_env: 'py311-dj41-drf314'
+        - python: '3.10'
+          tox_env: 'py310-dj41-drf314'
+        - python: '3.11'
+          tox_env: 'py311-dj41-drf314'
 
     runs-on: ubuntu-22.04
     name: Python ${{ matrix.python }} with packages ${{ matrix.tox_env }}
