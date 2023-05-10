@@ -3,7 +3,7 @@ pytest-cov==2.4.0
 pytest-flake8==0.7
 pytest-django==3.1.2
 flake8==3.4.1
-coverage==3.7.1
+coverage
 tox==3.10.0
 virtualenv
 pypandoc==1.4
