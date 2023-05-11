@@ -1,5 +1,7 @@
 from datetime import datetime, date
 from django.core.exceptions import FieldError
+from django.db.models import F, Value, Case
+from django.db.models.functions import Coalesce
 from unittest.mock import Mock
 
 from .comparisons import *
@@ -27,15 +29,16 @@ def get_field_mapping(field):
         return {name: name}
 
 
-def find_field_names_from_meta(meta, **kwargs):
+def find_field_names_from_meta(meta, annotated=None, **kwargs):
     field_names = {}
+    annotated = annotated or []
     concrete_only = kwargs.get('concrete_only', False)
 
     if concrete_only:
-        fields_no_mapping = [f.attname for f in meta.concrete_fields]
+        fields_no_mapping = [f.attname for f in meta.concrete_fields] + annotated
         fields_with_mapping = []
     else:
-        fields_no_mapping = [f for f in meta._forward_fields_map.keys()]
+        fields_no_mapping = [f for f in meta._forward_fields_map.keys()] + annotated
         fields_with_mapping = [f for f in meta.fields_map.values()]
 
         for parent in meta.parents.keys():
@@ -68,7 +71,11 @@ def find_field_names_from_obj(obj, **kwargs):
 
 def find_field_names(obj, **kwargs):
     if hasattr(obj, '_meta'):
-        lookup_fields, actual_fields = find_field_names_from_meta(obj._meta, **kwargs)
+        lookup_fields, actual_fields = find_field_names_from_meta(
+            obj._meta,
+            annotated=getattr(obj, '_annotated_fields', []),
+            **kwargs
+        )
     else:
         lookup_fields, actual_fields = find_field_names_from_obj(obj, **kwargs)
 
@@ -102,6 +109,21 @@ def get_field_value(obj, field_name, default=None):
 def get_attribute(obj, attr, default=None):
     result = obj
     comparison = None
+    if isinstance(attr, F):
+        attr = attr.deconstruct()[1][0]
+    elif isinstance(attr, Value):
+        return attr.value, None
+    elif isinstance(attr, Case):
+        for case in attr.cases:
+            if filter_results([obj], case.condition):
+                return get_attribute(obj, case.result)
+        else:
+            return get_attribute(obj, attr.default)
+    elif isinstance(attr, Coalesce):
+        for expr in attr.source_expressions:
+            res, comp = get_attribute(obj, expr)
+            if res is not None:
+                return res, comp
     parts = attr.split('__')
 
     for i, attr_part in enumerate(parts):
@@ -286,3 +308,27 @@ def hash_dict(obj, *fields):
     obj_values = {f: get_field_value(obj, f) for f in field_names}
 
     return hash(tuple(sorted((k, v) for k, v in obj_values.items() if not fields or k in fields)))
+
+
+def filter_results(source, query):
+    results = []
+
+    for child in query.children:
+        filtered = _filter_single_q(source, child, query.negated)
+
+        if filtered:
+            if not results or query.connector == CONNECTORS_OR:
+                results = merge(results, filtered)
+            else:
+                results = intersect(results, filtered)
+        elif query.connector == CONNECTORS_AND:
+            return []
+
+    return results
+
+
+def _filter_single_q(source, q_obj, negated):
+    if isinstance(q_obj, DjangoQ):
+        return filter_results(source, q_obj)
+    else:
+        return matches(negated=negated, *source, **{q_obj[0]: q_obj[1]})
