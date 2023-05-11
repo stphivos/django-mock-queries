@@ -28,7 +28,7 @@ qs = MockSet(
     MockModel(mock_name='bill', email='bill@gmail.com'),
 )
 
-print [x for x in qs.all().filter(email__icontains='gmail.com').select_related('address')]
+print([x for x in qs.all().filter(email__icontains='gmail.com').select_related('address')])
 # Outputs: [john, bill]
 
 qs = MockSet(
@@ -37,7 +37,7 @@ qs = MockSet(
     MockModel(mock_name='model 3', msrp=35000),
 )
 
-print qs.all().aggregate(Avg('msrp'))
+print(qs.all().aggregate(Avg('msrp')))
 # Outputs: {'msrp__avg': 61666}
 
 qs = MockSet(
@@ -46,55 +46,56 @@ qs = MockSet(
     MockModel(mock_name='s90', make='volvo', country='sweden'),
 )
 
-print [x for x in qs.all().filter(Q(make__iexact='tesla') | Q(country__iexact='germany'))]
+print([x for x in qs.all().filter(Q(make__iexact='tesla') | Q(country__iexact='germany'))])
 # Outputs: [model x, s-class]
 
 qs = MockSet(cls=MockModel)
-print qs.create(mock_name='my_object', foo='1', bar='a')
+print(qs.create(mock_name='my_object', foo='1', bar='a'))
 # Outputs: my_object
 
-print [x for x in qs]
+print([x for x in qs])
 # Outputs: [my_object]
 ```
 
 ### Test function that uses Django QuerySet:
 
 ```python
-"""
-Function that queries active users
-"""
-def active_users(self):
-    return User.objects.filter(is_active=True).all()
-
-"""
-Test function applies expected filters by patching Django's user model Manager or Queryset with a MockSet
-"""
-from mock import patch
+from unittest import TestCase
+from unittest.mock import patch
 from django_mock_queries.query import MockSet, MockModel
 
 
 class TestApi(TestCase):
+    """
+    Test function applies expected filters by patching Django's user model Manager or Queryset with a MockSet.
+    """
     users = MockSet()
     user_objects = patch('django.contrib.auth.models.User.objects', users)
+    
+    def active_users(self):
+        """
+        Query active users.
+        """
+        return User.objects.filter(is_active=True).all()
 
     @user_objects
     def test_api_active_users_filters_by_is_active_true(self):
         self.users.add(
-        	MockModel(mock_name='active user', is_active=True),
-        	MockModel(mock_name='inactive user', is_active=False)
+            MockModel(mock_name='active user', is_active=True),
+            MockModel(mock_name='inactive user', is_active=False)
         )
 
-        for x in self.api.active_users():
-        	assert x.is_active
+        for user in self.active_users():
+            self.assertTrue(user.is_active)
 ```
 
 ### Test django-rest-framework model serializer:
 
 ```python
-"""
-Car model serializer that includes a nested serializer and a method field
-"""
 class CarSerializer(serializers.ModelSerializer):
+    """
+    Car model serializer that includes a nested serializer and a method field.
+    """
     make = ManufacturerSerializer()
     speed = serializers.SerializerMethodField()
 
@@ -105,10 +106,11 @@ class CarSerializer(serializers.ModelSerializer):
         model = Car
         fields = ('id', 'make', 'model', 'speed',)
 
-"""
-Test serializer returns fields with expected values and mock the result of nested serializer for field make
-"""
+
 def test_car_serializer_fields(self):
+    """
+    Test serializer returns fields with expected values and mock the result of nested serializer for field `make`.
+    """
     car = Car(id=1, make=Manufacturer(id=1, name='vw'), model='golf', speed=300)
 
     values = {
@@ -126,6 +128,7 @@ def test_car_serializer_fields(self):
 ```
 
 ### Full Example
+
 There is a full Django application in the `examples/users` folder. It shows how
 to configure `django_mock_queries` in your tests and run them with or without
 setting up a Django database. Running the mock tests without a database can be
@@ -216,10 +219,7 @@ git push -u origin HEAD
 
 * Add docs as a service like readthedocs with examples for every feature
 * Add support for missing QuerySet methods/Field lookups/Aggregation functions:
-    * Methods that return new QuerySets: annotate, reverse, none, extra, raw
-
-    * Methods that do not return QuerySets: bulk_create, in_bulk, as_manager
-
-    * Field lookups: search
-
-    * Aggregation functions: StdDev, Variance
+    * Methods that return new QuerySets: `annotate`, `reverse`, `none`, `extra`, `raw`
+    * Methods that do not return QuerySets: `bulk_create`, `in_bulk`, `as_manager`
+    * Field lookups: `search`
+    * Aggregation functions: `StdDev`, `Variance`
