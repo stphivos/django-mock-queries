@@ -114,7 +114,7 @@ class MockSet(MagicMock, metaclass=MockSetMeta):
     def in_bulk(self, id_list=None, *, field_name='pk'):
         result = {}
         for model in self.items:
-            if id_list is None or model.pk in id_list:
+            if id_list is None or getattr(model, field_name) in id_list:
                 result[getattr(model, field_name)] = model
         return result
 

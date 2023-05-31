@@ -1024,7 +1024,7 @@ class TestQuery(TestCase):
         qs = MockSet(golf, polo, kia)
 
         self.assertEqual(qs.in_bulk(), {1: golf, 2: polo, 4: kia})
-        self.assertEqual(qs.in_bulk(id_list=[4], field_name='model'), {'kia': kia})
+        self.assertEqual(qs.in_bulk(id_list=['kia'], field_name='model'), {'kia': kia})
 
     def test_annotate(self):
         qs = MockSet(CarVariation(color='green', car=Car(model='golf', id=1), id=1),
