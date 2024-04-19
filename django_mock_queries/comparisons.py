@@ -10,7 +10,7 @@ def iexact_comparison(first, second):
 
 
 def contains_comparison(first, second):
-    if isinstance(first, list) or isinstance(first, tuple):
+    if isinstance(first, (list, tuple)):
         return set(second).issubset(first)
 
     return second in first
