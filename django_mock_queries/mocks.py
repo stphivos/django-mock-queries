@@ -476,7 +476,7 @@ class ModelMocker(Mocker):
         objects = self.objects.filter(pk=pk_val)
 
         if objects.exists():
-            attrs = {field.name: value for field, _, value in values if value is not None}
+            attrs = {field.attname: value for field, _, value in values if value is not None}
             self.objects.update(**attrs)
             return True
         else:
