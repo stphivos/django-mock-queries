@@ -116,6 +116,19 @@ class TestUtils(TestCase):
         result = utils.is_match('abc', 'a', constants.COMPARISON_CONTAINS)
         assert result is True
 
+    def test_is_match_case_list_contains_check(self):
+        result = utils.is_match([1, 2, 3], [1, 2], constants.COMPARISON_CONTAINS)
+        assert result is True
+
+        result = utils.is_match([1, 2, 3], [1, 4], constants.COMPARISON_CONTAINS)
+        assert result is False
+
+        result = utils.is_match((1, 2, 3), (1, 2), constants.COMPARISON_CONTAINS)
+        assert result is True
+
+        result = utils.is_match((1, 2, 3), (1, 2,3, 4), constants.COMPARISON_CONTAINS)
+        assert result is False
+
     def test_is_match_case_insensitive_contains_check(self):
         result = utils.is_match('abc', 'A', constants.COMPARISON_ICONTAINS)
         assert result is True
