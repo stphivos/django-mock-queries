@@ -1357,7 +1357,7 @@ class TestQuery(TestCase):
         self.assertEqual(mockset.count(), 2)
         self.assertEqual(mockset.filter(Q()).count(), 2)
     
-    def test_mock_model_annotation_by_nested_field(self):
+    def test_mock_set_annotation_by_nested_mock_model(self):
         mockset = MockSet(
             MockModel(id=1, nested_mock=MockModel(id=1, field1="field_value"))
         )
