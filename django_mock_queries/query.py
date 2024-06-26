@@ -122,7 +122,7 @@ class MockSet(MagicMock, metaclass=MockSetMeta):
         results = list(self.items)
         for key, value in kwargs.items():
             for row in results:
-                if not hasattr(row, '_annotated_fields'):
+                if not (hasattr(row, '_annotated_fields') and isinstance(row._annotated_fields, list)):
                     row._annotated_fields = []
                 row._annotated_fields.append(key)
                 setattr(row, key, get_attribute(row, value)[0])
