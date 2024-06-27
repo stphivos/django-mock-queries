@@ -1356,3 +1356,10 @@ class TestQuery(TestCase):
         mockset = MockSet(car1, car2)
         self.assertEqual(mockset.count(), 2)
         self.assertEqual(mockset.filter(Q()).count(), 2)
+
+    def test_mock_set_annotation_by_nested_mock_model(self):
+        mockset = MockSet(
+            MockModel(id=1, nested_mock=MockModel(id=1, field1="field_value"))
+        )
+        field1 = mockset.annotate(field1=models.F("nested_mock__field1")).values_list("field1")[0][0]
+        assert field1 == "field_value"
