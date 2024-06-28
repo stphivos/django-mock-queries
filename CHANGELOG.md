@@ -1,29 +1,6 @@
 # Changelog
 
-## [Unreleased](https://github.com/stphivos/django-mock-queries/tree/HEAD)
-
-[Full Changelog](https://github.com/stphivos/django-mock-queries/compare/v2.1.7...HEAD)
-
-**Implemented enhancements:**
-
-- Implement `annotate` and `in_bulk` \(updated\) [\#156](https://github.com/stphivos/django-mock-queries/pull/156) ([phitranphitranphitran](https://github.com/phitranphitranphitran))
-- Return a new object of the same type instead of forcing MockSet [\#155](https://github.com/stphivos/django-mock-queries/pull/155) ([lvieirajr](https://github.com/lvieirajr))
-
-**Closed issues:**
-
-- Review MockSet implementation for better inheritance behaviour [\#150](https://github.com/stphivos/django-mock-queries/issues/150)
-- UnorderedObjectListWarning raised even when ordering the MockSet [\#138](https://github.com/stphivos/django-mock-queries/issues/138)
-
-**Merged pull requests:**
-
-- Improve README [\#167](https://github.com/stphivos/django-mock-queries/pull/167) ([stefan6419846](https://github.com/stefan6419846))
-- Fix tests for Django 3.2 and Django 4.1 [\#166](https://github.com/stphivos/django-mock-queries/pull/166) ([stefan6419846](https://github.com/stefan6419846))
-- Drop Python 2 code and avoid deprecated code [\#164](https://github.com/stphivos/django-mock-queries/pull/164) ([stefan6419846](https://github.com/stefan6419846))
-- Migrate CI to github actions [\#163](https://github.com/stphivos/django-mock-queries/pull/163) ([stphivos](https://github.com/stphivos))
-- Only require `mock` package on Python \< 3.3 [\#161](https://github.com/stphivos/django-mock-queries/pull/161) ([stefan6419846](https://github.com/stefan6419846))
-- Support reverse foreign key filter by in comparison [\#153](https://github.com/stphivos/django-mock-queries/pull/153) ([karally](https://github.com/karally))
-- Allow usage of Q objects on MockSet.get\(\) [\#147](https://github.com/stphivos/django-mock-queries/pull/147) ([lvieirajr](https://github.com/lvieirajr))
-- Adding overlap operator for ArrayFields [\#143](https://github.com/stphivos/django-mock-queries/pull/143) ([lvieirajr](https://github.com/lvieirajr))
+For more recent versions, please refer to the corresponding release on GitHub: https://github.com/stphivos/django-mock-queries/releases
 
 ## [v2.1.7](https://github.com/stphivos/django-mock-queries/tree/v2.1.7) (2021-09-12)
 
