@@ -1090,6 +1090,13 @@ class TestQuery(TestCase):
 
         self.assertEqual(qs[2].color_or_car, 'kia')
 
+    def test_annotate_returns_current_class_instance(self):
+        class CustomMockSet(MockSet):
+            pass
+
+        qs = CustomMockSet(Car(model='golf', id=1))
+        self.assertIsInstance(qs.annotate(model=models.F('model')), CustomMockSet)
+
     def test_query_values_raises_attribute_error_when_field_is_not_in_meta_concrete_fields(self):
         qs = MockSet(MockModel(foo=1), MockModel(foo=2))
         self.assertRaises(FieldError, qs.values, 'bar')
