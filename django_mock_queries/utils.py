@@ -1,6 +1,6 @@
 from datetime import datetime, date
 from django.core.exceptions import FieldError
-from django.db.models import F, Value, Case
+from django.db.models import Case, F, Subquery, Value
 from django.db.models.functions import Coalesce
 from unittest.mock import Mock
 
@@ -124,6 +124,12 @@ def get_attribute(obj, attr, default=None):
             res, comp = get_attribute(obj, expr)
             if res is not None:
                 return res, comp
+    elif isinstance(attr, Subquery):
+        for expr in attr.get_source_expressions():
+            res, comp = get_attribute(obj, expr)
+            if res is not None:
+                return res, comp
+            
     parts = attr.split('__')
 
     for i, attr_part in enumerate(parts):
