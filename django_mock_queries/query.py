@@ -127,7 +127,7 @@ class MockSet(MagicMock, metaclass=MockSetMeta):
                 row._annotated_fields.append(key)
                 setattr(row, key, get_attribute(row, value)[0])
 
-        return MockSet(*results, clone=self)
+        return self._mockset_class()(*results, clone=self)
 
     def aggregate(self, *args, **kwargs):
         result = {}
