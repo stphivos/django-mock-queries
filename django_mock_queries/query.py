@@ -151,7 +151,8 @@ class MockSet(MagicMock, metaclass=MockSetMeta):
                     AGGREGATES_COUNT: lambda: len(values),
                     AGGREGATES_MAX: lambda: max(values),
                     AGGREGATES_MIN: lambda: min(values),
-                    AGGREGATES_AVG: lambda: sum(values) / len(values)
+                    AGGREGATES_AVG: lambda: sum(values) / len(values),
+                    AGGREGATES_ARRAY: lambda: values,
                 }[expr.function]()
 
             if len(values) == 0 and expr.function == AGGREGATES_COUNT:
