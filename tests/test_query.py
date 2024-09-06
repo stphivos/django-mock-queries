@@ -324,6 +324,19 @@ class TestQuery(TestCase):
             [x.foo for x in items if x.foo is not None]
         )
 
+    def test_query_aggregate_performs_array_on_queryset_field(self):
+        items = [
+            MockModel(foo=5),
+            MockModel(foo=10),
+            MockModel(foo=15),
+        ]
+        self.mock_set.add(*items)
+
+        expr = MagicMock(function=AGGREGATES_ARRAY, source_expressions=[MockModel(name='foo')])
+        result = self.mock_set.aggregate(expr)
+
+        assert result['foo__array_agg'] == [x.foo for x in items]
+
     def test_query_aggregate_with_none_only_field_values_performs_correct_aggregation(self):
         items = [
             MockModel(foo=None),
