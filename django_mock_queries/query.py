@@ -183,6 +183,10 @@ class MockSet(MagicMock, metaclass=MockSetMeta):
                 results[key] = item
         return self._mockset_class()(*results.values(), clone=self)
 
+    def set(self, objs, **attrs):
+        self.delete(**attrs)
+        self.add(*objs)
+
     def _raise_does_not_exist(self):
         does_not_exist = getattr(self.model, 'DoesNotExist', ObjectDoesNotExist)
         raise does_not_exist()

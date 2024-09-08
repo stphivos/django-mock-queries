@@ -1383,3 +1383,13 @@ class TestQuery(TestCase):
         )
         field1 = mockset.annotate(field1=models.F("nested_mock__field1")).values_list("field1")[0][0]
         assert field1 == "field_value"
+
+    def test_set_replaces_all_items(self):
+        mockset = MockSet(
+            MockModel(id=1, field="value_1", mock_name="item1"),
+            MockModel(id=2, field="value_2", mock_name="item2"),
+        )
+        mockset.set([MockModel(id=3, field="value_3", mock_name="item3")])
+
+        assert len(mockset) == 1
+        assert mockset[0].id == 3
