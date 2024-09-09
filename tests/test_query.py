@@ -706,20 +706,32 @@ class TestQuery(TestCase):
         item_2 = MockModel(foo=1, bar='b', mock_name='item_2')
 
         self.mock_set.add(item_1, item_2)
-        self.mock_set.delete()
+        deleted_count, deleted_items = self.mock_set.delete()
 
         assert len(self.mock_set) == 0, len(self.mock_set)
+        assert deleted_count == 2
+        assert deleted_items == {'item_1': 1, 'item_2': 1}
+
+    def test_query_delete_non_model_entries(self):
+        items = [1, 2, 3, 'foo', 'bar', True]
+        self.mock_set.add(*items)
+
+        deleted_count, deleted_items = self.mock_set.delete()
+        assert deleted_count == 6
+        assert deleted_items == {'int': 3, 'str': 2, 'bool': 1}
 
     def test_query_delete_entries_propagated_from_nested_qs(self):
         item_1 = MockModel(foo=1, bar='a', mock_name='item_1')
         item_2 = MockModel(foo=1, bar='b', mock_name='item_2')
 
         self.mock_set.add(item_1, item_2)
-        self.mock_set.filter(bar='b').delete()
+        deleted_count, deleted_items = self.mock_set.filter(bar='b').delete()
 
         assert len(self.mock_set) == 1, len(self.mock_set)
         assert item_1 in self.mock_set
         assert item_2 not in self.mock_set
+        assert deleted_count == 1
+        assert deleted_items == {'item_2': 1}
 
     def test_query_gets_unique_match_by_attrs_from_set(self):
         item_1 = MockModel(foo=1)

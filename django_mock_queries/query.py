@@ -1,13 +1,13 @@
 import datetime
 import random
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 from unittest.mock import Mock, MagicMock, PropertyMock
 
 from .constants import *
 from .exceptions import *
 from .utils import (
     matches, get_attribute, validate_mock_set, is_list_like_iter, flatten_list, truncate,
-    hash_dict, filter_results
+    hash_dict, filter_results, get_nested_attr
 )
 
 
@@ -267,16 +267,25 @@ class MockSet(MagicMock, metaclass=MockSetMeta):
         return count
 
     def _delete_recursive(self, *items_to_remove, **attrs):
+        removed_items = defaultdict(int)
+
         for item in matches(*items_to_remove, **attrs):
             self.items.remove(item)
             self.fire(item, self.EVENT_DELETED)
 
+            # Support returning detailed information about removed items
+            # even if items are not `MockModel` instances
+            item_label = get_nested_attr(item, '_meta.label', default=type(item).__name__)
+            removed_items[item_label] += 1
+
         if self.clone is not None:
             self.clone._delete_recursive(*items_to_remove, **attrs)
 
+        return sum(removed_items.values()), removed_items
+
     def delete(self, **attrs):
         # Delete normally doesn't take **attrs - they're only needed for remove
-        self._delete_recursive(*self.items, **attrs)
+        return self._delete_recursive(*self.items, **attrs)
 
     # The following 2 methods were kept for backwards compatibility and
     # should be removed in the future since they are covered by filter & delete
@@ -437,7 +446,8 @@ class MockModel(dict):
         super(MockModel, self).__init__(*args, **kwargs)
 
         self.save = PropertyMock()
-        self.__meta = MockOptions(*self.get_fields())
+        object_name = self.get('mock_name', type(self).__name__)
+        self.__meta = MockOptions(object_name, *self.get_fields())
 
     def __getattr__(self, item):
         return self.get(item, None)
@@ -471,9 +481,19 @@ def create_model(*fields):
 
 
 class MockOptions:
-    def __init__(self, *field_names):
+    def __init__(self, object_name, *field_names):
         self.load_fields(*field_names)
         self.get_latest_by = None
+        self.object_name = object_name
+        self.model_name = object_name.lower()
+
+    @property
+    def label(self):
+        return self.object_name
+
+    @property
+    def label_lower(self):
+        return self.model_name
 
     def load_fields(self, *field_names):
         fields = {name: MockField(name) for name in field_names}

@@ -332,3 +332,13 @@ def _filter_single_q(source, q_obj, negated):
         return filter_results(source, q_obj)
     else:
         return matches(negated=negated, *source, **{q_obj[0]: q_obj[1]})
+
+
+def get_nested_attr(obj, attr_path, default=None):
+    attrs = attr_path.split('.')
+    try:
+        for attr in attrs:
+            obj = getattr(obj, attr)
+        return obj
+    except AttributeError:
+        return default
