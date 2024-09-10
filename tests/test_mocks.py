@@ -486,6 +486,27 @@ class TestMockers(TestCase):
         self.assertIsInstance(objects['added'], Car)
         self.assertEqual(objects['added'], objects['car'])
 
+    def test_model_mocker_delete_from_instance_with_nested_context_manager(self):
+
+        def create_delete_models():
+            car = Car.objects.create(speed=10)
+            car.delete()
+
+            manufacturer = Manufacturer.objects.create(name='foo')
+            manufacturer.delete()
+
+        def models_exist():
+            return Manufacturer.objects.exists() or Car.objects.exists()
+
+        with ModelMocker(Manufacturer), ModelMocker(Car):
+            create_delete_models()
+            assert not models_exist()
+
+        # Test same scenario with reversed context manager order
+        with ModelMocker(Car), ModelMocker(Manufacturer):
+            create_delete_models()
+            assert not models_exist()
+
     def test_model_mocker_event_updated_from_manager(self):
         objects = {}
 
