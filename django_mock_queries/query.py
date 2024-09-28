@@ -38,6 +38,7 @@ class MockSet(MagicMock, metaclass=MockSetMeta):
     def __init__(self, *initial_items, **kwargs):
         clone = kwargs.pop('clone', None)
         model = kwargs.pop('model', None)
+        query = kwargs.pop('query', None)
 
         for x in self.RETURN_SELF_METHODS:
             kwargs.update({x: self._return_self})
@@ -48,6 +49,10 @@ class MockSet(MagicMock, metaclass=MockSetMeta):
         self.clone = clone
         self.model = getattr(clone, 'model', model)
         self.events = {}
+        self.query = (
+            getattr(clone, 'query', query) 
+            or MagicMock(spec=DjangoSqlQuery, model=self.model, clone=lambda: self.query)
+        )
 
         self.add(*initial_items)
 
