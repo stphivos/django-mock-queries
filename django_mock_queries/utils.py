@@ -1,5 +1,6 @@
 from datetime import datetime, date
 from django.core.exceptions import FieldError
+from django.db import models
 from django.db.models import F, Value, Case
 from django.db.models.functions import Coalesce
 from unittest.mock import Mock
@@ -304,6 +305,9 @@ def truncate(obj, kind):
 
 
 def hash_dict(obj, *fields):
+    if not isinstance(obj, models.Model):
+        return hash(obj)
+
     field_names = fields or find_field_names(obj, concrete_only=True)[1]
     obj_values = {f: get_field_value(obj, f) for f in field_names}
 
