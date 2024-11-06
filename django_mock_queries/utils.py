@@ -1,6 +1,5 @@
 from datetime import datetime, date
 from django.core.exceptions import FieldError
-from django.db import models
 from django.db.models import F, Value, Case
 from django.db.models.functions import Coalesce
 from unittest.mock import Mock
