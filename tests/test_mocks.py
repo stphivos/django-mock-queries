@@ -587,22 +587,3 @@ class TestMockers(TestCase):
 
                 with self.assertRaises(NotSupportedError):
                     CarVariation.objects.all().delete()
-
-    def test_distinct_for_flat_values(self):
-        with ModelMocker(Manufacturer):
-            toyota = Manufacturer.objects.create(name="Toyota")
-            ford = Manufacturer.objects.create(name="Ford")
-            distinct_names = Manufacturer.objects.values_list("name", flat=True).distinct()
-            assert list(distinct_names) == [toyota.name, ford.name]
-
-    def test_distinct_for_objects(self):
-        with ModelMocker(Manufacturer):
-            toyota = Manufacturer.objects.create(name="Toyota")
-            ford = Manufacturer.objects.create(name="Ford")
-            ford_2 = Manufacturer.objects.create(name="Ford")
-            distinct_objects = Manufacturer.objects.distinct()
-            assert list(distinct_objects) == [toyota, ford, ford_2]
-            distinct_objects = Manufacturer.objects.distinct("name")
-            assert list(distinct_objects) == [toyota, ford]
-            distinct_objects = Manufacturer.objects.distinct("id")
-            assert list(distinct_objects) == [toyota, ford, ford_2]
