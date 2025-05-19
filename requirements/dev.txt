@@ -7,5 +7,5 @@ coverage==7.2.5
 tox==4.5.1
 virtualenv==20.26.6
 pypandoc==1.11
-setuptools==70.0.0
+setuptools==78.1.1
 twine==4.0.2
