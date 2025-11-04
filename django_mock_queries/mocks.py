@@ -387,7 +387,7 @@ class Mocker:
 
         if target_obj is None:
             mock_args = dict(new=MagicMock())
-        elif type(target_obj) == MethodType:
+        elif isinstance(target_obj, MethodType):
             mock_args = dict(new=MagicMock(autospec=True, side_effect=target_obj))
         else:
             mock_args = dict(new=PropertyMock(return_value=target_obj))
