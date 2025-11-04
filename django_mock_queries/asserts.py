@@ -56,15 +56,15 @@ class SerializerAssert:
                 continue
 
             assert field in data, \
-                'Field {0} missing from serializer {1}.'.format(field, self._cls)
+                'Field {} missing from serializer {}.'.format(field, self._cls)
 
             assert data[field] == values[field], \
-                'Field {0} equals {1}, expected {2}.'.format(field, data[field], values[field])
+                'Field {} equals {}, expected {}.'.format(field, data[field], values[field])
 
     def _validate_args(self):
         for field in self._mock_fields:
             if field in self._expected_values:
-                raise AttributeError('Cannot specify expected value for a mocked field ({0}.{1}).'
+                raise AttributeError('Cannot specify expected value for a mocked field ({}.{}).'
                                      .format(self._cls.Meta.model, field))
 
     @property

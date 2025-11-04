@@ -9,40 +9,32 @@ jobs:
     strategy:
       matrix:
         include:
-        - python: '3.8'
-          tox_env: 'py38-dj22-drf313'
         - python: '3.9'
-          tox_env: 'py39-dj22-drf313'
-        - python: '3.8'
-          tox_env: 'py38-dj32-drf314'
-        - python: '3.9'
-          tox_env: 'py39-dj32-drf314'
+          tox_env: 'py39-dj42-drf316'
         - python: '3.10'
-          tox_env: 'py310-dj32-drf314'
-        - python: '3.8'
-          tox_env: 'py38-dj42-drf314'
-        - python: '3.9'
-          tox_env: 'py39-dj42-drf314'
-        - python: '3.10'
-          tox_env: 'py310-dj42-drf314'
+          tox_env: 'py310-dj42-drf316'
         - python: '3.11'
-          tox_env: 'py311-dj42-drf314'
+          tox_env: 'py311-dj42-drf316'
         - python: '3.12'
-          tox_env: 'py312-dj42-drf314'
+          tox_env: 'py312-dj42-drf316'
         - python: '3.10'
-          tox_env: 'py310-dj50-drf314'
+          tox_env: 'py310-dj52-drf316'
         - python: '3.11'
-          tox_env: 'py311-dj50-drf314'
+          tox_env: 'py311-dj52-drf316'
         - python: '3.12'
-          tox_env: 'py312-dj50-drf314'
+          tox_env: 'py312-dj52-drf316'
+        - python: '3.13'
+          tox_env: 'py313-dj52-drf316'
+        - python: '3.14'
+          tox_env: 'py314-dj52-drf316'
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     name: Python ${{ matrix.python }} with packages ${{ matrix.tox_env }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python }}
 
