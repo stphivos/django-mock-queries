@@ -376,7 +376,7 @@ class TestMockers(TestCase):
             we would like to skip but verify it's called before save. """
 
     def test_mocker_with_replacement_method(self):
-        class Foo(object):
+        class Foo:
             def who(self):
                 return 'foo'
 
@@ -388,7 +388,7 @@ class TestMockers(TestCase):
             self.assertEqual(Foo().who(), mocker.who())
 
     def test_mocker_with_replacement_attribute(self):
-        class Foo(object):
+        class Foo:
             who = 'foo'
 
         class Bar(Mocker):
@@ -398,7 +398,7 @@ class TestMockers(TestCase):
             self.assertEqual(Foo.who, mocker.who)
 
     def test_mocker_without_replacement(self):
-        class Foo(object):
+        class Foo:
             def who(self):
                 return 'foo'
 

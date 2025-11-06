@@ -1,11 +1,10 @@
-pytest==7.3.1; python_version<"3.8"
-pytest>=7.4.0; python_version>"3.7"  # New `ast` classes: https://github.com/pytest-dev/pytest/commit/9335a0b4453dbb08a07b6ac1b33d1ed3d17c45a5
-pytest-cov==4.0.0
+pytest==8.4.2
+pytest-cov==7.0.0
 pytest-django
-flake8==6.0.0
-coverage==7.2.5
-tox==4.5.1
-virtualenv==20.23.0
-pypandoc==1.11
-setuptools==70.0.0
-twine==4.0.2
+flake8==7.3.0
+coverage==7.10.7
+tox==4.30.3
+virtualenv==20.35.4
+pypandoc==1.15
+setuptools==80.9.0
+twine==6.2.0

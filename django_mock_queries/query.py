@@ -13,7 +13,7 @@ from .utils import (
 
 class MockSetMeta(type):
     def __call__(cls, *initial_items, **kwargs):
-        obj = super(MockSetMeta, cls).__call__(**kwargs)
+        obj = super().__call__(**kwargs)
         obj.add(*initial_items)
         return obj
 
@@ -42,7 +42,7 @@ class MockSet(MagicMock, metaclass=MockSetMeta):
         for x in self.RETURN_SELF_METHODS:
             kwargs.update({x: self._return_self})
 
-        super(MockSet, self).__init__(spec=DjangoQuerySet, **kwargs)
+        super().__init__(spec=DjangoQuerySet, **kwargs)
 
         self.items = list()
         self.clone = clone
@@ -133,7 +133,7 @@ class MockSet(MagicMock, metaclass=MockSetMeta):
         result = {}
 
         for expr in set(args):
-            kwargs['{0}__{1}'.format(expr.source_expressions[0].name, expr.function).lower()] = expr
+            kwargs['{}__{}'.format(expr.source_expressions[0].name, expr.function).lower()] = expr
 
         for alias, expr in kwargs.items():
             values = []
@@ -389,7 +389,7 @@ class MockSet(MagicMock, metaclass=MockSetMeta):
         named = kwargs.pop('named', False)
 
         if kwargs:
-            raise TypeError('Unexpected keyword arguments to values_list: %s' % (list(kwargs),))
+            raise TypeError('Unexpected keyword arguments to values_list: {}'.format(list(kwargs)))
         if flat and len(fields) > 1:
             raise TypeError('`flat` is not valid when values_list is called with more than one field.')
         if flat and named:
@@ -443,7 +443,7 @@ class MockSet(MagicMock, metaclass=MockSetMeta):
 
 class MockModel(dict):
     def __init__(self, *args, **kwargs):
-        super(MockModel, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.save = PropertyMock()
         object_name = self.get('mock_name', type(self).__name__)
@@ -471,7 +471,7 @@ class MockModel(dict):
         return self.__meta
 
     def __repr__(self):
-        return self.get('mock_name', None) or super(MockModel, self).__repr__()
+        return self.get('mock_name', None) or super().__repr__()
 
 
 def create_model(*fields):

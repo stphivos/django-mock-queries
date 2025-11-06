@@ -1,14 +1,14 @@
+from pathlib import Path
+
 from setuptools import setup
 
 
 def read_md(filename):
-    return open(filename).read()
+    return Path(filename).read_text(encoding='utf-8')
 
 
 def parse_requirements(filename):
-    reqs = []
-    with open(filename, 'r') as f:
-        reqs = f.read().splitlines()
+    reqs = Path(filename).read_text(encoding='utf-8').splitlines()
     if not reqs:
         raise RuntimeError("Unable to read requirements from '%s'" % filename)
     return reqs
@@ -16,7 +16,7 @@ def parse_requirements(filename):
 
 setup(
     name='django_mock_queries',
-    version='2.2.0',
+    version='2.3.0',
     description='A django library for mocking queryset functions in memory for testing',
     long_description=read_md('README.md'),
     long_description_content_type='text/markdown',
@@ -37,4 +37,5 @@ setup(
     keywords='django orm mocking unit-testing tdd',
     packages=['django_mock_queries'],
     install_requires=parse_requirements('requirements/core.txt'),
+    python_requires='>=3.9',
 )

@@ -66,7 +66,7 @@ class TestMockedApi(TestCase):
         assert inactive_user not in results
 
     def test_mocked_api_create_user(self):
-        attrs = dict((k, v) for (k, v) in baker.prepare(User).__dict__.items() if k[0] != '_')
+        attrs = {k: v for (k, v) in baker.prepare(User).__dict__.items() if k[0] != '_'}
         user = self.api.create_user(**attrs)
         assert isinstance(user, User)
 
