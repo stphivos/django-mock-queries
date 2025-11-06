@@ -163,7 +163,7 @@ class MockOneToOneMap(MockMap):
             old_instance = old_instance_weak()
         if entry is None or old_instance is None:
             raise self.original.RelatedObjectDoesNotExist(
-                "Mock %s has no %s." % (
+                "Mock {} has no {}.".format(
                     owner.__name__,
                     self.original.related.get_accessor_name()
                 )
@@ -177,8 +177,7 @@ def find_all_models(models):
         yield model
         # noinspection PyProtectedMember
         for parent in model._meta.parents.keys():
-            for parent_model in find_all_models((parent,)):
-                yield parent_model
+            yield from find_all_models((parent,))
 
 
 def _patch_save(model, name):
@@ -388,7 +387,7 @@ class Mocker:
 
         if target_obj is None:
             mock_args = dict(new=MagicMock())
-        elif type(target_obj) == MethodType:
+        elif isinstance(target_obj, MethodType):
             mock_args = dict(new=MagicMock(autospec=True, side_effect=target_obj))
         else:
             mock_args = dict(new=PropertyMock(return_value=target_obj))
@@ -427,13 +426,13 @@ class ModelMocker(Mocker):
     default_methods = tuple(default_methods)
 
     def __init__(self, cls, *methods, **kwargs):
-        super(ModelMocker, self).__init__(cls, *(self.default_methods + methods), **kwargs)
+        super().__init__(cls, *(self.default_methods + methods), **kwargs)
 
         self.objects = MockSet(model=self.cls)
         self.objects.on('added', self._on_added)
 
     def __enter__(self):
-        result = super(ModelMocker, self).__enter__()
+        result = super().__enter__()
         return result
 
     def _obj_pk(self, obj):
