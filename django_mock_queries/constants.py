@@ -94,6 +94,7 @@ AGGREGATES = (
 )
 
 DjangoQ = locate('django.db.models.Q')
+DjangoSqlQuery = locate('django.db.models.sql.Query')
 DjangoQuerySet = locate('django.db.models.QuerySet')
 DjangoDbRouter = locate('django.db.router')
 DjangoModelDeletionCollector = locate('django.db.models.deletion.Collector')
