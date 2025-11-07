@@ -626,6 +626,28 @@ class TestQuery(TestCase):
         ]
         assert results == expected, results
 
+    def test_query_distinct_values_list(self):
+        item_1 = MockModel(foo=1, mock_name='item_1')
+        item_2 = MockModel(foo=2, mock_name='item_2')
+        item_3 = MockModel(foo=3, mock_name='item_3')
+
+        self.mock_set.add(item_2, item_3, item_1, item_3)
+        results = list(self.mock_set.values_list('foo').distinct().order_by('foo'))
+
+        expected = [(item_2.foo,), (item_3.foo,), (item_1.foo,)]
+        assert results == expected, results
+
+    def test_query_distinct_values_list_flatten(self):
+        item_1 = MockModel(foo=1, mock_name='item_1')
+        item_2 = MockModel(foo=2, mock_name='item_2')
+        item_3 = MockModel(foo=3, mock_name='item_3')
+
+        self.mock_set.add(item_2, item_3, item_1, item_3)
+        results = list(self.mock_set.values_list('foo', flat=True).distinct().order_by('foo'))
+
+        expected = [item_2.foo, item_3.foo, item_1.foo]
+        assert results == expected, results
+
     def test_query_distinct_with_fields(self):
         item_1 = MockModel(foo=1, bar='c', foo_bar='x', mock_name='item_1')
         item_2 = MockModel(foo=2, bar='a', foo_bar='y', mock_name='item_2')
