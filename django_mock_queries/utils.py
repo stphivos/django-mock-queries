@@ -306,6 +306,8 @@ def truncate(obj, kind):
 def hash_dict(obj, *fields):
     field_names = fields or find_field_names(obj, concrete_only=True)[1]
     obj_values = {f: get_field_value(obj, f) for f in field_names}
+    if not obj_values and not fields:
+        obj_values = {"field": obj}
 
     return hash(tuple(sorted((k, v) for k, v in obj_values.items() if not fields or k in fields)))
 
