@@ -85,7 +85,7 @@ def find_field_names(obj, **kwargs):
 def validate_field(field_name, model_fields, for_update=False):
     if '__' in field_name and for_update:
         raise FieldError(
-            'Cannot update model field %r (only non-relations and foreign keys permitted).' % field_name
+            f'Cannot update model field {field_name!r} (only non-relations and foreign keys permitted).'
         )
     if field_name != 'pk' and field_name not in model_fields:
         message = "Cannot resolve keyword '{}' into field. Choices are {}.".format(

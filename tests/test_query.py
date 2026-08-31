@@ -18,9 +18,11 @@ from tests.mock_models import Car, CarVariation, Sedan, Manufacturer
 
 class TestQuery(TestCase):
     def setUp(self):
+        super().setUp()
         self.mock_set = MockSet()
 
     def tearDown(self):
+        super().tearDown()
         self.mock_set.clear()
 
     def test_query_counts_items_in_set(self):

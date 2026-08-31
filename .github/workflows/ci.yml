@@ -4,37 +4,45 @@ on:
 - push
 - pull_request
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
 jobs:
   main:
     strategy:
       matrix:
         include:
         - python: '3.9'
-          tox_env: 'py39-dj42-drf316'
+          tox_env: 'py39-dj42-drf317'
         - python: '3.10'
-          tox_env: 'py310-dj42-drf316'
+          tox_env: 'py310-dj52-drf318'
         - python: '3.11'
-          tox_env: 'py311-dj42-drf316'
+          tox_env: 'py311-dj52-drf318'
         - python: '3.12'
-          tox_env: 'py312-dj42-drf316'
-        - python: '3.10'
-          tox_env: 'py310-dj52-drf316'
-        - python: '3.11'
-          tox_env: 'py311-dj52-drf316'
-        - python: '3.12'
-          tox_env: 'py312-dj52-drf316'
+          tox_env: 'py312-dj52-drf318'
         - python: '3.13'
-          tox_env: 'py313-dj52-drf316'
+          tox_env: 'py313-dj52-drf318'
         - python: '3.14'
-          tox_env: 'py314-dj52-drf316'
+          tox_env: 'py314-dj52-drf318'
+        - python: '3.12'
+          tox_env: 'py312-dj61-drf318'
+        - python: '3.13'
+          tox_env: 'py313-dj61-drf318'
+        - python: '3.14'
+          tox_env: 'py314-dj61-drf318'
 
     runs-on: ubuntu-latest
     name: Python ${{ matrix.python }} with packages ${{ matrix.tox_env }}
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        persist-credentials: false
 
     - name: set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
       with:
         python-version: ${{ matrix.python }}
 

@@ -10,7 +10,7 @@ def read_md(filename):
 def parse_requirements(filename):
     reqs = Path(filename).read_text(encoding='utf-8').splitlines()
     if not reqs:
-        raise RuntimeError("Unable to read requirements from '%s'" % filename)
+        raise RuntimeError(f"Unable to read requirements from '{filename}'")
     return reqs
 
 
@@ -23,14 +23,13 @@ setup(
     url='https://github.com/stphivos/django-mock-queries',
     author='Phivos Stylianides',
     author_email='stphivos@gmail.com',
-    license='MIT',
+    license_expression='MIT',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Testing',
         'Topic :: Software Development :: Testing :: Mocking',
         'Topic :: Software Development :: Testing :: Unit',
-        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3 :: Only',
     ],

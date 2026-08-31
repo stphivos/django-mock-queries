@@ -10,6 +10,7 @@ from tests.mock_models import Car, CarSerializer, Manufacturer
 
 class TestQuery(TestCase):
     def setUp(self):
+        super().setUp()
         self.make_model = baker.prepare(Manufacturer, id=1, _fill_optional=True)
         self.car_model = baker.prepare(Car, id=1, make=self.make_model, _fill_optional=True)
         self.serializer_assert = SerializerAssert(CarSerializer)
@@ -95,6 +96,6 @@ class TestQuery(TestCase):
     @skipIf(django.VERSION[:2] >= (1, 10),
             "Django 1.10 refreshes deleted fields from the database.")
     def test_serializer_assert_run_skips_check_for_null_field_excluded_from_serializer(self):
-        delattr(self.car_model, 'model')
+        del self.car_model.model
         sa = self.serializer_assert.instance(self.car_model).returns('model')
         sa.run()
