@@ -1,4 +1,4 @@
-from unittest import TestCase, skipIf
+from unittest import TestCase
 from unittest.mock import patch
 
 from model_bakery import baker

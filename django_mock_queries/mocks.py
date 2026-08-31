@@ -458,7 +458,10 @@ class ModelMocker(Mocker):
         return []
 
     def _do_update(self, *args, **_):
-        _, _, pk_val, values, _, _ = args
+        if django.VERSION[0] >= 6:
+            _base_qs, _using, pk_val, values, _update_fields, _forced_update, _returning_fields = args
+        else:
+            _base_qs, _using, pk_val, values, _update_fields, _forced_update = args
         objects = self.objects.filter(pk=pk_val)
 
         if objects.exists():
