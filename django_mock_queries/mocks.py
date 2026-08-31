@@ -458,18 +458,20 @@ class ModelMocker(Mocker):
         return []
 
     def _do_update(self, *args, **_):
-        if django.VERSION[0] >= 6:
+        use_new_behavior = django.VERSION >= (6, 0)
+        if use_new_behavior:
+            # TODO: We might need to implement support for `returning_fields`.
             _base_qs, _using, pk_val, values, _update_fields, _forced_update, _returning_fields = args
         else:
             _base_qs, _using, pk_val, values, _update_fields, _forced_update = args
-        objects = self.objects.filter(pk=pk_val)
 
-        if objects.exists():
-            attrs = {field.attname: value for field, _, value in values if value is not None}
-            self.objects.update(**attrs)
-            return True
-        else:
-            return False
+        objects = self.objects.filter(pk=pk_val)
+        if not objects.exists():
+            return [] if use_new_behavior else False
+
+        attrs = {field.attname: value for field, _model, value in values if value is not None}
+        self.objects.update(**attrs)
+        return [()] if use_new_behavior else True
 
     def delete(self, *_args, **_kwargs):
         pk = self._obj_pk(self.objects[0])
