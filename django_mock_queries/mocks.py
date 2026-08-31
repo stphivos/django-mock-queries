@@ -91,8 +91,11 @@ def mock_django_connection(disabled_features=None):
         result = MagicMock(name='mock_connection.ops.compiler()')
         # noinspection PyProtectedMember
         result.execute_sql.side_effect = NotSupportedError(
-            "Mock database tried to execute SQL for {} model.".format(
-                queryset.model._meta.object_name))
+            f"Mock database tried to execute SQL for {queryset.model._meta.object_name} model."
+        )
+        result.execute_returning_sql.side_effect = NotSupportedError(
+            f"Mock database tried to execute returning SQL for {queryset.model._meta.object_name} model."
+        )
         result.has_results.side_effect = result.execute_sql.side_effect
         return result
 
