@@ -1,15 +1,15 @@
-from unittest import TestCase, skipIf
+from unittest import TestCase
 from unittest.mock import patch
 
 from model_bakery import baker
 
-import django
 from django_mock_queries.asserts import assert_serializer, SerializerAssert
 from tests.mock_models import Car, CarSerializer, Manufacturer
 
 
 class TestQuery(TestCase):
     def setUp(self):
+        super().setUp()
         self.make_model = baker.prepare(Manufacturer, id=1, _fill_optional=True)
         self.car_model = baker.prepare(Car, id=1, make=self.make_model, _fill_optional=True)
         self.serializer_assert = SerializerAssert(CarSerializer)
@@ -90,11 +90,4 @@ class TestQuery(TestCase):
             'speed': self.car_model.format_speed()
         }
         sa = self.serializer_assert.instance(self.car_model).returns(*values.keys()).values(**values)
-        sa.run()
-
-    @skipIf(django.VERSION[:2] >= (1, 10),
-            "Django 1.10 refreshes deleted fields from the database.")
-    def test_serializer_assert_run_skips_check_for_null_field_excluded_from_serializer(self):
-        delattr(self.car_model, 'model')
-        sa = self.serializer_assert.instance(self.car_model).returns('model')
         sa.run()

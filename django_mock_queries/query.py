@@ -352,7 +352,7 @@ class MockSet(MagicMock, metaclass=MockSetMeta):
                 value = flatten_list(value)
                 result_count = max(result_count, len(value))
 
-                for bucket, data in field_buckets.items():
+                for _bucket, data in field_buckets.items():
                     while len(data) < result_count:
                         data.append(data[-1])
 
@@ -508,7 +508,7 @@ class MockOptions:
         for key in ('local_concrete_fields', 'concrete_fields', 'fields'):
             self.__dict__[key] = []
 
-            for name, obj in fields.items():
+            for _name, obj in fields.items():
                 self.__dict__[key].append(obj)
 
 
