@@ -7,4 +7,5 @@ coverage==7.10.7
 tox==4.30.3
 virtualenv==21.14.13
 pypandoc==1.17
-setuptools==84.1.0
+setuptools==84.1.0; python_version > "3.9"
+setuptools==82.0.1; python_version <= "3.9"
